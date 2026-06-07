@@ -175,7 +175,7 @@ class _RideTrackingScreenState extends State<RideTrackingScreen>
                   Positioned(
                     left: 20,
                     right: 20,
-                    bottom: 24,
+                    bottom: 14,
                     child: DriverBottomSheet(
                       isSearching: _isSearching,
                       isReached: _isReached,
@@ -846,14 +846,14 @@ class DriverBottomSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ClipRRect(
-      borderRadius: BorderRadius.circular(34),
+      borderRadius: BorderRadius.circular(26),
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 22, sigmaY: 22),
         child: Container(
-          padding: const EdgeInsets.fromLTRB(18, 16, 18, 18),
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
           decoration: BoxDecoration(
             color: const Color(0xFF08140F).withOpacity(0.86),
-            borderRadius: BorderRadius.circular(34),
+            borderRadius: BorderRadius.circular(26),
             border: Border.all(color: Colors.white.withOpacity(0.10)),
             boxShadow: [
               BoxShadow(
@@ -887,44 +887,34 @@ class _DriverBottomSheetSkeleton extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         Container(
-          width: 44,
-          height: 5,
+          width: 36,
+          height: 4,
           decoration: BoxDecoration(
             color: Colors.white.withOpacity(0.18),
             borderRadius: BorderRadius.circular(100),
           ),
         ),
-        const SizedBox(height: 18),
+        const SizedBox(height: 12),
         const Row(
           children: [
-            _ShimmerCircle(size: 66),
-            SizedBox(width: 14),
+            _ShimmerCircle(size: 54),
+            SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _ShimmerBar(widthFactor: 0.56, height: 16),
-                  SizedBox(height: 10),
-                  _ShimmerBar(widthFactor: 0.84, height: 11),
-                  SizedBox(height: 10),
-                  _ShimmerBar(widthFactor: 0.42, height: 11),
+                  _ShimmerBar(widthFactor: 0.52, height: 14),
+                  SizedBox(height: 8),
+                  _ShimmerBar(widthFactor: 0.72, height: 10),
                 ],
               ),
             ),
+            SizedBox(width: 12),
+            _ShimmerCircle(size: 42),
+            SizedBox(width: 8),
+            _ShimmerCircle(size: 42),
           ],
         ),
-        const SizedBox(height: 18),
-        const Row(
-          children: [
-            Expanded(child: _ShimmerTile(label: 'Fare', valueWidth: 0.44)),
-            SizedBox(width: 10),
-            Expanded(child: _ShimmerTile(label: 'Distance', valueWidth: 0.34)),
-            SizedBox(width: 10),
-            Expanded(child: _ShimmerTile(label: 'ETA', valueWidth: 0.30)),
-          ],
-        ),
-        const SizedBox(height: 14),
-        const _ShimmerRouteSummary(),
       ],
     );
   }
@@ -941,20 +931,20 @@ class _DriverBottomSheetDetails extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         Container(
-          width: 44,
-          height: 5,
+          width: 36,
+          height: 4,
           decoration: BoxDecoration(
             color: Colors.white.withOpacity(0.18),
             borderRadius: BorderRadius.circular(100),
           ),
         ),
-        const SizedBox(height: 18),
+        const SizedBox(height: 12),
         Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             Container(
-              width: 66,
-              height: 66,
+              width: 54,
+              height: 54,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 gradient: const LinearGradient(
@@ -968,25 +958,28 @@ class _DriverBottomSheetDetails extends StatelessWidget {
                   ),
                 ],
               ),
-              padding: const EdgeInsets.all(3),
+              padding: const EdgeInsets.all(2),
               child: Container(
                 decoration: const BoxDecoration(
                   shape: BoxShape.circle,
                   color: Color(0xFF0E2018),
                 ),
-                child: const Center(
-                  child: Text(
-                    'AM',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w900,
-                      fontSize: 19,
-                    ),
+                child: ClipOval(
+                  child: Image.network(
+                    'https://images.pexels.com/photos/220453/pexels-photo-220453.jpeg?auto=compress&cs=tinysrgb&w=200',
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, _, __) {
+                      return const Icon(
+                        Icons.person_rounded,
+                        color: Colors.white,
+                        size: 24,
+                      );
+                    },
                   ),
                 ),
               ),
             ),
-            const SizedBox(width: 14),
+            const SizedBox(width: 12),
             const Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -995,25 +988,25 @@ class _DriverBottomSheetDetails extends StatelessWidget {
                     'Ahsan Malik',
                     style: TextStyle(
                       color: Colors.white,
-                      fontSize: 20,
+                      fontSize: 17,
                       fontWeight: FontWeight.w900,
                       letterSpacing: -0.6,
                     ),
                   ),
-                  SizedBox(height: 6),
+                  SizedBox(height: 4),
                   Row(
                     children: [
                       Icon(
                         Icons.star_rounded,
                         color: Color(0xFFFFC857),
-                        size: 18,
+                        size: 16,
                       ),
                       SizedBox(width: 4),
                       Text(
                         '4.9',
                         style: TextStyle(
                           color: Colors.white,
-                          fontSize: 13,
+                          fontSize: 12,
                           fontWeight: FontWeight.w700,
                         ),
                       ),
@@ -1024,7 +1017,7 @@ class _DriverBottomSheetDetails extends StatelessWidget {
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(
                             color: Color(0xFFB8C7C0),
-                            fontSize: 12.5,
+                            fontSize: 11.5,
                             fontWeight: FontWeight.w500,
                           ),
                         ),
@@ -1034,15 +1027,15 @@ class _DriverBottomSheetDetails extends StatelessWidget {
                 ],
               ),
             ),
-            const SizedBox(width: 10),
-            Column(
+            const SizedBox(width: 8),
+            Row(
               children: [
                 _ActionButton(
                   icon: Icons.call_rounded,
                   color: const Color(0xFF54F4A7),
                   onTap: () {},
                 ),
-                const SizedBox(height: 10),
+                const SizedBox(width: 8),
                 _ActionButton(
                   icon: Icons.chat_bubble_rounded,
                   color: const Color(0xFF62D9FF),
@@ -1052,59 +1045,15 @@ class _DriverBottomSheetDetails extends StatelessWidget {
             ),
           ],
         ),
-        const SizedBox(height: 14),
-        Row(
-          children: [
-            Expanded(
-              child: _MetricCard(
-                label: 'Fare',
-                value: '\$12.40',
-                icon: Icons.payments_rounded,
-                accent: const Color(0xFF54F4A7),
-              ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: _MetricCard(
-                label: 'Distance',
-                value: '2.8 km',
-                icon: Icons.straighten_rounded,
-                accent: const Color(0xFF62D9FF),
-              ),
-            ),
-          ],
-        ),
         const SizedBox(height: 10),
-        Row(
-          children: [
-            Expanded(
-              child: _MetricCard(
-                label: 'ETA',
-                value: '6 min',
-                icon: Icons.schedule_rounded,
-                accent: const Color(0xFFFFC857),
-              ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: _MetricCard(
-                label: 'Ride',
-                value: isReached ? 'At pickup' : 'Arriving',
-                icon: isReached ? Icons.verified_rounded : Icons.route_rounded,
-                accent: const Color(0xFF54F4A7),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 14),
-        AnimatedContainer(
-          duration: const Duration(milliseconds: 500),
-          padding: const EdgeInsets.all(14),
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
           decoration: BoxDecoration(
             color: isReached
                 ? const Color(0xFF54F4A7).withOpacity(0.13)
-                : Colors.white.withOpacity(0.055),
-            borderRadius: BorderRadius.circular(24),
+                : Colors.white.withOpacity(0.05),
+            borderRadius: BorderRadius.circular(16),
             border: Border.all(
               color: isReached
                   ? const Color(0xFF54F4A7).withOpacity(0.25)
@@ -1116,160 +1065,25 @@ class _DriverBottomSheetDetails extends StatelessWidget {
               Icon(
                 isReached ? Icons.verified_rounded : Icons.route_rounded,
                 color: const Color(0xFF54F4A7),
-                size: 21,
+                size: 18,
               ),
-              const SizedBox(width: 10),
+              const SizedBox(width: 8),
               Expanded(
                 child: Text(
                   isReached
-                      ? 'Driver has reached your pickup location'
-                      : 'Fastest route active · Live tracking enabled',
+                      ? 'Driver is at pickup point'
+                      : 'Driver is arriving',
                   style: const TextStyle(
                     color: Color(0xFFD8E7E0),
-                    fontSize: 13,
+                    fontSize: 12,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
-              ),
-              const Icon(
-                Icons.keyboard_arrow_right_rounded,
-                color: Color(0xFFB8C7C0),
               ),
             ],
           ),
         ),
       ],
-    );
-  }
-}
-
-class _MetricCard extends StatelessWidget {
-  final String label;
-  final String value;
-  final IconData icon;
-  final Color accent;
-
-  const _MetricCard({
-    required this.label,
-    required this.value,
-    required this.icon,
-    required this.accent,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.055),
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: Colors.white.withOpacity(0.07)),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 38,
-            height: 38,
-            decoration: BoxDecoration(
-              color: accent.withOpacity(0.16),
-              borderRadius: BorderRadius.circular(14),
-            ),
-            child: Icon(icon, color: accent, size: 19),
-          ),
-          const SizedBox(width: 12),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                label.toUpperCase(),
-                style: const TextStyle(
-                  color: Color(0xFF8FA39A),
-                  fontSize: 10.5,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 1.2,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                value,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w900,
-                  letterSpacing: -0.35,
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _ShimmerRouteSummary extends StatelessWidget {
-  const _ShimmerRouteSummary();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.055),
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: Colors.white.withOpacity(0.07)),
-      ),
-      child: const Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _ShimmerBar(widthFactor: 0.52, height: 14),
-          SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(child: _ShimmerBar(widthFactor: 0.24, height: 10)),
-              SizedBox(width: 10),
-              Expanded(child: _ShimmerBar(widthFactor: 0.42, height: 10)),
-              SizedBox(width: 10),
-              Expanded(child: _ShimmerBar(widthFactor: 0.28, height: 10)),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _ShimmerTile extends StatelessWidget {
-  final String label;
-  final double valueWidth;
-
-  const _ShimmerTile({required this.label, required this.valueWidth});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.055),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.white.withOpacity(0.07)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            label.toUpperCase(),
-            style: const TextStyle(
-              color: Color(0xFF8FA39A),
-              fontSize: 10,
-              fontWeight: FontWeight.w700,
-              letterSpacing: 1.0,
-            ),
-          ),
-          const SizedBox(height: 10),
-          _ShimmerBar(widthFactor: valueWidth, height: 14),
-        ],
-      ),
     );
   }
 }
