@@ -15,8 +15,28 @@ class AiFoodDeliveryConceptApp extends StatelessWidget {
     return MaterialApp(
       title: 'AI Food Delivery Concept',
       debugShowCheckedModeBanner: false,
+      themeMode: ThemeMode.dark,
       theme: AppTheme.darkTheme,
+      builder: (context, child) {
+        return ScrollConfiguration(
+          behavior: const _NoGlowScrollBehavior(),
+          child: child ?? const SizedBox.shrink(),
+        );
+      },
       home: const AiFoodDiscoveryScreen(),
     );
+  }
+}
+
+class _NoGlowScrollBehavior extends MaterialScrollBehavior {
+  const _NoGlowScrollBehavior();
+
+  @override
+  Widget buildOverscrollIndicator(
+    BuildContext context,
+    Widget child,
+    ScrollableDetails details,
+  ) {
+    return child;
   }
 }

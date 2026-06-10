@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 
 import 'app_theme.dart';
 import 'food_item.dart';
+import 'shared_widgets.dart';
 
 class AiDeliveryTrackingScreen extends StatefulWidget {
   final FoodItem food;
@@ -15,30 +16,29 @@ class AiDeliveryTrackingScreen extends StatefulWidget {
   });
 
   @override
-  State<AiDeliveryTrackingScreen> createState() =>
-      _AiDeliveryTrackingScreenState();
+  State<AiDeliveryTrackingScreen> createState() => _AiDeliveryTrackingScreenState();
 }
 
 class _AiDeliveryTrackingScreenState extends State<AiDeliveryTrackingScreen>
     with SingleTickerProviderStateMixin {
   late final AnimationController _controller;
+  double _smoothedAngle = 0;
 
   final List<Offset> routePoints = const [
-    Offset(0.18, 0.28),
-    Offset(0.30, 0.41),
-    Offset(0.45, 0.43),
-    Offset(0.55, 0.56),
-    Offset(0.67, 0.62),
-    Offset(0.80, 0.76),
+    Offset(0.16, 0.24),
+    Offset(0.27, 0.36),
+    Offset(0.42, 0.40),
+    Offset(0.55, 0.53),
+    Offset(0.67, 0.60),
+    Offset(0.79, 0.74),
   ];
 
   @override
   void initState() {
     super.initState();
-
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(seconds: 16),
+      duration: const Duration(seconds: 18),
     )..repeat();
   }
 
@@ -48,33 +48,40 @@ class _AiDeliveryTrackingScreenState extends State<AiDeliveryTrackingScreen>
     super.dispose();
   }
 
-  bool get isSearching => _controller.value < 0.20;
-  bool get isAccepted => _controller.value >= 0.20 && _controller.value < 0.34;
-  bool get isPreparing => _controller.value >= 0.34 && _controller.value < 0.48;
-  bool get isRiderAssigned =>
-      _controller.value >= 0.48 && _controller.value < 0.62;
-  bool get isMoving => _controller.value >= 0.62 && _controller.value < 0.94;
+  bool get isSearching => _controller.value < 0.18;
+  bool get isAccepted => _controller.value >= 0.18 && _controller.value < 0.34;
+  bool get isPreparing => _controller.value >= 0.34 && _controller.value < 0.50;
+  bool get isRiderAssigned => _controller.value >= 0.50 && _controller.value < 0.64;
+  bool get isMoving => _controller.value >= 0.64 && _controller.value < 0.94;
   bool get isDelivered => _controller.value >= 0.94;
 
   double get routeProgress {
-    if (_controller.value < 0.62) return 0;
-    if (_controller.value >= 0.94) return 1;
+    if (_controller.value < 0.64) {
+      return 0;
+    }
+    if (_controller.value >= 0.94) {
+      return 1;
+    }
 
-    return ((_controller.value - 0.62) / 0.32).clamp(0.0, 1.0);
+    return ((_controller.value - 0.64) / 0.30).clamp(0.0, 1.0);
   }
 
   int get etaMinutes {
-    if (isDelivered) return 0;
-    final eta = 8 - (routeProgress * 8);
-    return eta.ceil().clamp(1, 8);
+    if (isDelivered) {
+      return 0;
+    }
+
+    final eta = 10 - (routeProgress * 10);
+    return eta.ceil().clamp(1, 10);
   }
 
   int get activeStep {
     if (isSearching) return 0;
     if (isAccepted) return 1;
     if (isPreparing) return 2;
-    if (isRiderAssigned || isMoving) return 3;
-    return 4;
+    if (isRiderAssigned) return 3;
+    if (isMoving) return 4;
+    return 5;
   }
 
   String get title {
@@ -82,26 +89,26 @@ class _AiDeliveryTrackingScreenState extends State<AiDeliveryTrackingScreen>
     if (isAccepted) return 'Order accepted';
     if (isPreparing) return 'Preparing your meal';
     if (isRiderAssigned) return 'Rider assigned';
-    if (isDelivered) return 'Order delivered';
-    return 'Rider is on the way';
+    if (isMoving) return 'On the way';
+    return 'Delivered';
   }
 
   String get subtitle {
-    if (isSearching) return 'Scanning nearby riders and fastest routes...';
-    if (isAccepted) return '${widget.food.restaurant} confirmed your order';
-    if (isPreparing) return 'Your food is being prepared fresh';
-    if (isRiderAssigned) return 'Hamza is picking up your order';
-    if (isDelivered) return 'Enjoy your meal. Bon appétit!';
-    return '$etaMinutes min away · Live delivery tracking';
+    if (isSearching) return 'Scanning nearby riders and the fastest route.';
+    if (isAccepted) return '${widget.food.restaurant} confirmed the order';
+    if (isPreparing) return 'Fresh prep in progress inside the restaurant';
+    if (isRiderAssigned) return 'Hamza is at the pickup point';
+    if (isMoving) return 'Your rider is moving through the city';
+    return 'Enjoy your meal. Delivered with care.';
   }
 
   String get badge {
     if (isSearching) return 'AI';
     if (isAccepted) return 'Accepted';
     if (isPreparing) return 'Cooking';
-    if (isRiderAssigned) return 'Picked';
-    if (isDelivered) return 'Done';
-    return '$etaMinutes min';
+    if (isRiderAssigned) return 'Pickup';
+    if (isMoving) return '$etaMinutes min';
+    return 'Done';
   }
 
   Path _buildRoutePath(Size size) {
@@ -111,13 +118,12 @@ class _AiDeliveryTrackingScreenState extends State<AiDeliveryTrackingScreen>
 
     final path = Path()..moveTo(points.first.dx, points.first.dy);
 
-    for (int i = 1; i < points.length; i++) {
+    for (var i = 1; i < points.length; i++) {
       final previous = points[i - 1];
       final current = points[i];
-
       final control = Offset(
         (previous.dx + current.dx) / 2,
-        min(previous.dy, current.dy) - 48,
+        min(previous.dy, current.dy) - 56,
       );
 
       path.quadraticBezierTo(
@@ -131,11 +137,27 @@ class _AiDeliveryTrackingScreenState extends State<AiDeliveryTrackingScreen>
     return path;
   }
 
-  Tangent _getScooterTangent(Size size) {
+  Tangent _routeTangent(Size size) {
     final path = _buildRoutePath(size);
     final metric = path.computeMetrics().first;
+    final offset = metric.length * routeProgress;
+    return metric.getTangentForOffset(offset) ?? metric.getTangentForOffset(0)!;
+  }
 
-    return metric.getTangentForOffset(metric.length * routeProgress)!;
+  double _normalizeAngle(double angle) {
+    while (angle <= -pi) {
+      angle += pi * 2;
+    }
+    while (angle > pi) {
+      angle -= pi * 2;
+    }
+    return angle;
+  }
+
+  double _smoothAngle(double target) {
+    final delta = _normalizeAngle(target - _smoothedAngle);
+    _smoothedAngle += delta * 0.14;
+    return _smoothedAngle;
   }
 
   @override
@@ -146,13 +168,14 @@ class _AiDeliveryTrackingScreenState extends State<AiDeliveryTrackingScreen>
       body: LayoutBuilder(
         builder: (context, constraints) {
           final size = Size(constraints.maxWidth, constraints.maxHeight);
+          final bottomSheetHeight = min(392.0, size.height * 0.46);
 
           return AnimatedBuilder(
             animation: _controller,
             builder: (context, _) {
-              final tangent = _getScooterTangent(size);
+              final tangent = _routeTangent(size);
               final scooterPosition = tangent.position;
-              final scooterAngle = tangent.angle;
+              final scooterAngle = _smoothAngle(tangent.angle);
 
               return Stack(
                 children: [
@@ -166,66 +189,58 @@ class _AiDeliveryTrackingScreenState extends State<AiDeliveryTrackingScreen>
                       ),
                     ),
                   ),
-
                   Positioned.fill(
                     child: Container(
-                      decoration: BoxDecoration(
+                      decoration: const BoxDecoration(
                         gradient: LinearGradient(
                           begin: Alignment.topCenter,
                           end: Alignment.bottomCenter,
                           colors: [
-                            Colors.black.withOpacity(0.05),
+                            Color(0x66000000),
                             Colors.transparent,
-                            Colors.black.withOpacity(0.78),
+                            Color(0xB9000000),
                           ],
                         ),
                       ),
                     ),
                   ),
-
                   SafeArea(
                     child: Padding(
-                      padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+                      padding: const EdgeInsets.fromLTRB(20, 14, 20, 0),
                       child: _TrackingTopCard(
                         title: title,
                         subtitle: subtitle,
                         badge: badge,
-                        isSearching: isSearching,
+                        etaMinutes: etaMinutes,
                         isDelivered: isDelivered,
                       ),
                     ),
                   ),
-
                   if (isSearching)
                     Positioned(
-                      top: size.height * 0.30,
+                      top: size.height * 0.31,
                       left: 0,
                       right: 0,
-                      child: const Center(
-                        child: _AiSearchOrb(),
-                      ),
+                      child: const Center(child: _AiSearchOrb()),
                     ),
-
                   Positioned(
-                    left: size.width * routePoints.first.dx - 22,
-                    top: size.height * routePoints.first.dy - 22,
+                    left: size.width * routePoints.first.dx - 28,
+                    top: size.height * routePoints.first.dy - 30,
                     child: const _MapMarker(
                       icon: Icons.restaurant_rounded,
                       label: 'Restaurant',
                       color: AppTheme.orange,
                     ),
                   ),
-
                   Positioned(
-                    left: size.width * routePoints.last.dx - 22,
-                    top: size.height * routePoints.last.dy - 22,
+                    left: size.width * routePoints.last.dx - 28,
+                    top: size.height * routePoints.last.dy - 30,
                     child: const _MapMarker(
                       icon: Icons.home_rounded,
                       label: 'Your location',
                       color: AppTheme.green,
                     ),
                   ),
-
                   if (!isSearching && !isAccepted && !isPreparing)
                     Positioned(
                       left: scooterPosition.dx - 34,
@@ -235,16 +250,19 @@ class _AiDeliveryTrackingScreenState extends State<AiDeliveryTrackingScreen>
                         child: const _ScooterMarker(),
                       ),
                     ),
-
                   Positioned(
-                    left: 20,
-                    right: 20,
-                    bottom: 24,
-                    child: _DeliveryBottomSheet(
-                      food: food,
-                      activeStep: activeStep,
-                      isDelivered: isDelivered,
-                      etaMinutes: etaMinutes,
+                    left: 18,
+                    right: 18,
+                    bottom: 18,
+                    child: SizedBox(
+                      height: bottomSheetHeight,
+                      child: _DeliveryBottomSheet(
+                        food: food,
+                        activeStep: activeStep,
+                        isDelivered: isDelivered,
+                        etaMinutes: etaMinutes,
+                        isMoving: isMoving,
+                      ),
                     ),
                   ),
                 ],
@@ -275,6 +293,7 @@ class _DeliveryMapPainter extends CustomPainter {
     _drawBackground(canvas, size);
     _drawRoads(canvas, size);
     _drawBlocks(canvas, size);
+    _drawLabels(canvas, size);
     _drawDots(canvas, size);
 
     if (showRoute) {
@@ -291,13 +310,12 @@ class _DeliveryMapPainter extends CustomPainter {
 
     final path = Path()..moveTo(points.first.dx, points.first.dy);
 
-    for (int i = 1; i < points.length; i++) {
+    for (var i = 1; i < points.length; i++) {
       final previous = points[i - 1];
       final current = points[i];
-
       final control = Offset(
         (previous.dx + current.dx) / 2,
-        min(previous.dy, current.dy) - 48,
+        min(previous.dy, current.dy) - 56,
       );
 
       path.quadraticBezierTo(
@@ -322,134 +340,142 @@ class _DeliveryMapPainter extends CustomPainter {
           end: Alignment.bottomRight,
           colors: [
             AppTheme.bg,
-            Color(0xFF0A1715),
-            Color(0xFF101219),
+            AppTheme.bgAlt,
+            Color(0xFF10161F),
+            Color(0xFF070B10),
           ],
         ).createShader(rect),
     );
 
     canvas.drawCircle(
-      Offset(size.width * 0.78, size.height * 0.14),
+      Offset(size.width * 0.82, size.height * 0.14),
       280,
       Paint()
         ..shader = RadialGradient(
-          colors: [
-            AppTheme.green.withOpacity(0.20),
-            Colors.transparent,
-          ],
-        ).createShader(
-          Rect.fromCircle(
-            center: Offset(size.width * 0.78, size.height * 0.14),
-            radius: 280,
-          ),
-        ),
+          colors: [AppTheme.green.withOpacity(0.16), Colors.transparent],
+        ).createShader(Rect.fromCircle(center: Offset(size.width * 0.82, size.height * 0.14), radius: 280)),
     );
 
     canvas.drawCircle(
       Offset(size.width * 0.18, size.height * 0.32),
-      230,
+      250,
       Paint()
         ..shader = RadialGradient(
-          colors: [
-            AppTheme.orange.withOpacity(0.13),
-            Colors.transparent,
-          ],
-        ).createShader(
-          Rect.fromCircle(
-            center: Offset(size.width * 0.18, size.height * 0.32),
-            radius: 230,
-          ),
-        ),
+          colors: [AppTheme.orange.withOpacity(0.12), Colors.transparent],
+        ).createShader(Rect.fromCircle(center: Offset(size.width * 0.18, size.height * 0.32), radius: 250)),
     );
   }
 
   void _drawRoads(Canvas canvas, Size size) {
-    final road = Paint()
-      ..color = Colors.white.withOpacity(0.075)
+    final roadGlow = Paint()
+      ..color = Colors.white.withOpacity(0.02)
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 30
+      ..strokeWidth = 54
       ..strokeCap = StrokeCap.round;
 
-    final thinRoad = Paint()
-      ..color = Colors.white.withOpacity(0.045)
+    final roadBase = Paint()
+      ..color = Colors.white.withOpacity(0.05)
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 15
+      ..strokeWidth = 22
       ..strokeCap = StrokeCap.round;
 
-    final roadOne = Path()
-      ..moveTo(-50, size.height * 0.36)
+    final roadThin = Paint()
+      ..color = Colors.white.withOpacity(0.03)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 10
+      ..strokeCap = StrokeCap.round;
+
+    final roadA = Path()
+      ..moveTo(-40, size.height * 0.28)
       ..cubicTo(
-        size.width * 0.24,
-        size.height * 0.22,
-        size.width * 0.52,
+        size.width * 0.20,
+        size.height * 0.18,
+        size.width * 0.48,
         size.height * 0.42,
-        size.width + 50,
-        size.height * 0.30,
+        size.width + 40,
+        size.height * 0.26,
       );
-
-    final roadTwo = Path()
-      ..moveTo(size.width * 0.15, -50)
+    final roadB = Path()
+      ..moveTo(size.width * 0.10, -40)
       ..cubicTo(
-        size.width * 0.10,
-        size.height * 0.30,
-        size.width * 0.32,
-        size.height * 0.62,
+        size.width * 0.12,
+        size.height * 0.24,
+        size.width * 0.30,
+        size.height * 0.60,
         size.width * 0.18,
-        size.height + 50,
+        size.height + 40,
       );
-
-    final roadThree = Path()
-      ..moveTo(size.width + 50, size.height * 0.70)
+    final roadC = Path()
+      ..moveTo(size.width + 30, size.height * 0.68)
       ..cubicTo(
         size.width * 0.74,
         size.height * 0.58,
-        size.width * 0.44,
-        size.height * 0.82,
-        -50,
+        size.width * 0.48,
         size.height * 0.84,
+        -30,
+        size.height * 0.82,
       );
 
-    canvas.drawPath(roadOne, road);
-    canvas.drawPath(roadTwo, thinRoad);
-    canvas.drawPath(roadThree, road);
+    canvas.drawPath(roadA, roadGlow);
+    canvas.drawPath(roadB, roadGlow);
+    canvas.drawPath(roadC, roadGlow);
+    canvas.drawPath(roadA, roadBase);
+    canvas.drawPath(roadB, roadThin);
+    canvas.drawPath(roadC, roadBase);
   }
 
   void _drawBlocks(Canvas canvas, Size size) {
-    final fill = Paint()
-      ..color = Colors.white.withOpacity(0.035)
-      ..style = PaintingStyle.fill;
-
+    final fill = Paint()..color = Colors.white.withOpacity(0.03);
     final border = Paint()
-      ..color = Colors.white.withOpacity(0.045)
+      ..color = Colors.white.withOpacity(0.04)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1;
 
     final blocks = [
-      Rect.fromLTWH(size.width * 0.07, size.height * 0.12, 88, 64),
-      Rect.fromLTWH(size.width * 0.47, size.height * 0.10, 132, 76),
-      Rect.fromLTWH(size.width * 0.18, size.height * 0.48, 116, 88),
-      Rect.fromLTWH(size.width * 0.60, size.height * 0.40, 108, 122),
-      Rect.fromLTWH(size.width * 0.10, size.height * 0.76, 124, 80),
-      Rect.fromLTWH(size.width * 0.58, size.height * 0.72, 128, 74),
+      Rect.fromLTWH(size.width * 0.08, size.height * 0.10, 88, 62),
+      Rect.fromLTWH(size.width * 0.25, size.height * 0.12, 126, 74),
+      Rect.fromLTWH(size.width * 0.58, size.height * 0.11, 126, 78),
+      Rect.fromLTWH(size.width * 0.14, size.height * 0.46, 118, 88),
+      Rect.fromLTWH(size.width * 0.56, size.height * 0.42, 132, 114),
+      Rect.fromLTWH(size.width * 0.10, size.height * 0.75, 124, 78),
+      Rect.fromLTWH(size.width * 0.62, size.height * 0.74, 116, 74),
     ];
 
     for (final rect in blocks) {
-      final rRect = RRect.fromRectAndRadius(
-        rect,
-        const Radius.circular(24),
-      );
-
+      final rRect = RRect.fromRectAndRadius(rect, const Radius.circular(20));
       canvas.drawRRect(rRect, fill);
       canvas.drawRRect(rRect, border);
     }
   }
 
-  void _drawDots(Canvas canvas, Size size) {
-    final paint = Paint()..color = Colors.white.withOpacity(0.08);
+  void _drawLabels(Canvas canvas, Size size) {
+    _drawLabel(canvas, 'North Ridge', Offset(size.width * 0.18, size.height * 0.21));
+    _drawLabel(canvas, 'Food District', Offset(size.width * 0.57, size.height * 0.39));
+    _drawLabel(canvas, 'Central Loop', Offset(size.width * 0.34, size.height * 0.70));
+  }
 
-    for (double x = 30; x < size.width; x += 42) {
-      for (double y = 90; y < size.height - 120; y += 42) {
-        canvas.drawCircle(Offset(x, y), 1.1, paint);
+  void _drawLabel(Canvas canvas, String text, Offset offset) {
+    final painter = TextPainter(
+      text: TextSpan(
+        text: text,
+        style: TextStyle(
+          color: Colors.white.withOpacity(0.12),
+          fontSize: 12,
+          fontWeight: FontWeight.w700,
+          letterSpacing: 0.2,
+        ),
+      ),
+      textDirection: TextDirection.ltr,
+    )..layout();
+    painter.paint(canvas, offset);
+  }
+
+  void _drawDots(Canvas canvas, Size size) {
+    final paint = Paint()..color = Colors.white.withOpacity(0.06);
+
+    for (double x = 22; x < size.width; x += 40) {
+      for (double y = 100; y < size.height - 110; y += 40) {
+        canvas.drawCircle(Offset(x, y), 1, paint);
       }
     }
   }
@@ -458,74 +484,67 @@ class _DeliveryMapPainter extends CustomPainter {
     final center = Offset(size.width * 0.50, size.height * 0.38);
 
     for (int i = 0; i < 4; i++) {
-      final progress = (aiPulseProgress * 4 + i * 0.22) % 1;
-      final radius = 44 + progress * 128;
+      final progress = (aiPulseProgress * 4 + i * 0.24) % 1;
+      final radius = 44 + progress * 126;
 
       canvas.drawCircle(
         center,
         radius,
         Paint()
-          ..color = AppTheme.green.withOpacity((1 - progress) * 0.16)
+          ..color = AppTheme.green.withOpacity((1 - progress) * 0.14)
           ..style = PaintingStyle.stroke
           ..strokeWidth = 2.2,
       );
     }
 
-    final sweepPaint = Paint()
-      ..shader = SweepGradient(
-        colors: [
-          Colors.transparent,
-          AppTheme.green.withOpacity(0.26),
-          Colors.transparent,
-        ],
-        stops: const [0.0, 0.58, 1.0],
-        transform: GradientRotation(aiPulseProgress * pi * 8),
-      ).createShader(
-        Rect.fromCircle(center: center, radius: 170),
-      );
-
-    canvas.drawCircle(center, 170, sweepPaint);
+    canvas.drawCircle(
+      center,
+      170,
+      Paint()
+        ..shader = SweepGradient(
+          colors: [
+            Colors.transparent,
+            AppTheme.green.withOpacity(0.22),
+            Colors.transparent,
+          ],
+          stops: const [0.0, 0.58, 1.0],
+          transform: GradientRotation(aiPulseProgress * pi * 4),
+        ).createShader(Rect.fromCircle(center: center, radius: 170)),
+    );
   }
 
   void _drawRoute(Canvas canvas, Size size) {
     final path = _buildRoutePath(size);
     final metric = path.computeMetrics().first;
+    final activeLength = metric.length * routeProgress;
+    final activePath = metric.extractPath(0, activeLength);
 
     canvas.drawPath(
       path,
       Paint()
-        ..color = AppTheme.green.withOpacity(0.24)
+        ..color = AppTheme.green.withOpacity(0.14)
         ..style = PaintingStyle.stroke
-        ..strokeWidth = 22
+        ..strokeWidth = 24
         ..strokeCap = StrokeCap.round
         ..strokeJoin = StrokeJoin.round
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 20),
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 18),
     );
 
     canvas.drawPath(
       path,
       Paint()
-        ..color = Colors.white.withOpacity(0.17)
+        ..color = Colors.white.withOpacity(0.16)
         ..style = PaintingStyle.stroke
         ..strokeWidth = 8
         ..strokeCap = StrokeCap.round
         ..strokeJoin = StrokeJoin.round,
     );
 
-    final activePath = metric.extractPath(
-      0,
-      metric.length * routeProgress,
-    );
-
     canvas.drawPath(
       activePath,
       Paint()
         ..shader = const LinearGradient(
-          colors: [
-            AppTheme.orange,
-            AppTheme.green,
-            AppTheme.cyan,
-          ],
+          colors: [AppTheme.orange, AppTheme.green, AppTheme.cyan],
         ).createShader(Offset.zero & size)
         ..style = PaintingStyle.stroke
         ..strokeWidth = 8
@@ -533,14 +552,25 @@ class _DeliveryMapPainter extends CustomPainter {
         ..strokeJoin = StrokeJoin.round,
     );
 
+    canvas.drawPath(
+      activePath,
+      Paint()
+        ..color = AppTheme.cyan.withOpacity(0.22)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 18
+        ..strokeCap = StrokeCap.round
+        ..strokeJoin = StrokeJoin.round
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 12),
+    );
+
     final dashPaint = Paint()
-      ..color = Colors.white.withOpacity(0.66)
+      ..color = Colors.white.withOpacity(0.56)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 2
       ..strokeCap = StrokeCap.round;
 
-    for (double i = 0; i < metric.length; i += 32) {
-      final dash = metric.extractPath(i, min(i + 10, metric.length));
+    for (double i = 0; i < activeLength; i += 34) {
+      final dash = metric.extractPath(i, min(i + 12, activeLength));
       canvas.drawPath(dash, dashPaint);
     }
   }
@@ -557,157 +587,117 @@ class _TrackingTopCard extends StatelessWidget {
   final String title;
   final String subtitle;
   final String badge;
-  final bool isSearching;
+  final int etaMinutes;
   final bool isDelivered;
 
   const _TrackingTopCard({
     required this.title,
     required this.subtitle,
     required this.badge,
-    required this.isSearching,
+    required this.etaMinutes,
     required this.isDelivered,
   });
 
   @override
   Widget build(BuildContext context) {
-    return ClipRRect(
+    return GlassCard(
+      padding: const EdgeInsets.all(16),
       borderRadius: BorderRadius.circular(30),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-        child: Container(
-          padding: const EdgeInsets.all(18),
-          decoration: BoxDecoration(
-            color: AppTheme.glass,
-            borderRadius: BorderRadius.circular(30),
-            border: Border.all(
-              color: Colors.white.withOpacity(0.10),
+      child: Row(
+        children: [
+          AnimatedContainer(
+            duration: const Duration(milliseconds: 360),
+            width: 54,
+            height: 54,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(18),
+              gradient: LinearGradient(
+                colors: isDelivered
+                    ? const [AppTheme.green, Color(0xFFB5FFE0)]
+                    : const [AppTheme.orange, AppTheme.green],
+              ),
+            ),
+            child: Icon(
+              isDelivered ? Icons.check_rounded : Icons.delivery_dining_rounded,
+              color: AppTheme.bg,
+              size: 27,
             ),
           ),
-          child: Row(
-            children: [
-              AnimatedContainer(
-                duration: const Duration(milliseconds: 450),
-                width: 52,
-                height: 52,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(19),
-                  gradient: LinearGradient(
-                    colors: isDelivered
-                        ? const [
-                            AppTheme.green,
-                            Color(0xFFB6FFE2),
-                          ]
-                        : const [
-                            AppTheme.orange,
-                            AppTheme.green,
-                          ],
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 260),
+                  child: Text(
+                    title,
+                    key: ValueKey(title),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 17,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: -0.35,
+                    ),
                   ),
                 ),
-                child: Icon(
-                  isSearching
-                      ? Icons.auto_awesome_rounded
-                      : isDelivered
-                          ? Icons.check_rounded
-                          : Icons.delivery_dining_rounded,
-                  color: AppTheme.bg,
-                  size: 27,
-                ),
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _AnimatedText(
-                      text: title,
-                      fontSize: 17.5,
-                      color: Colors.white,
-                      fontWeight: FontWeight.w900,
-                    ),
-                    const SizedBox(height: 5),
-                    _AnimatedText(
-                      text: subtitle,
-                      fontSize: 12.5,
+                const SizedBox(height: 5),
+                AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 260),
+                  child: Text(
+                    subtitle,
+                    key: ValueKey(subtitle),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
                       color: AppTheme.muted,
+                      fontSize: 12.5,
+                      height: 1.35,
                       fontWeight: FontWeight.w500,
                     ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 12),
-              AnimatedSwitcher(
-                duration: const Duration(milliseconds: 360),
-                child: Container(
-                  key: ValueKey(badge),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 13,
-                    vertical: 9,
                   ),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.08),
-                    borderRadius: BorderRadius.circular(18),
-                    border: Border.all(
-                      color: Colors.white.withOpacity(0.08),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 12),
+          AnimatedSwitcher(
+            duration: const Duration(milliseconds: 260),
+            child: Container(
+              key: ValueKey(badge),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.08),
+                borderRadius: BorderRadius.circular(18),
+                border: Border.all(color: Colors.white.withOpacity(0.08)),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text(
+                    'ETA',
+                    style: TextStyle(
+                      color: AppTheme.muted,
+                      fontSize: 10.5,
+                      fontWeight: FontWeight.w700,
                     ),
                   ),
-                  child: Text(
-                    badge,
+                  const SizedBox(height: 2),
+                  Text(
+                    isDelivered ? 'Now' : '$etaMinutes min',
                     style: const TextStyle(
                       color: AppTheme.green,
                       fontSize: 12.5,
                       fontWeight: FontWeight.w900,
                     ),
                   ),
-                ),
+                ],
               ),
-            ],
+            ),
           ),
-        ),
-      ),
-    );
-  }
-}
-
-class _AnimatedText extends StatelessWidget {
-  final String text;
-  final double fontSize;
-  final Color color;
-  final FontWeight fontWeight;
-
-  const _AnimatedText({
-    required this.text,
-    required this.fontSize,
-    required this.color,
-    required this.fontWeight,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedSwitcher(
-      duration: const Duration(milliseconds: 450),
-      transitionBuilder: (child, animation) {
-        return FadeTransition(
-          opacity: animation,
-          child: SlideTransition(
-            position: Tween<Offset>(
-              begin: const Offset(0, 0.30),
-              end: Offset.zero,
-            ).animate(animation),
-            child: child,
-          ),
-        );
-      },
-      child: Text(
-        text,
-        key: ValueKey(text),
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-        style: TextStyle(
-          color: color,
-          fontSize: fontSize,
-          fontWeight: fontWeight,
-          letterSpacing: -0.2,
-        ),
+        ],
       ),
     );
   }
@@ -727,10 +717,9 @@ class _AiSearchOrbState extends State<_AiSearchOrb>
   @override
   void initState() {
     super.initState();
-
     controller = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1800),
+      duration: const Duration(milliseconds: 1700),
     )..repeat();
   }
 
@@ -746,17 +735,13 @@ class _AiSearchOrbState extends State<_AiSearchOrb>
       animation: controller,
       builder: (_, __) {
         return CustomPaint(
-          size: const Size(230, 230),
+          size: const Size(220, 220),
           painter: _AiOrbPainter(controller.value),
           child: const SizedBox(
-            width: 230,
-            height: 230,
+            width: 220,
+            height: 220,
             child: Center(
-              child: Icon(
-                Icons.auto_awesome_rounded,
-                color: AppTheme.bg,
-                size: 38,
-              ),
+              child: Icon(Icons.auto_awesome_rounded, color: AppTheme.bg, size: 36),
             ),
           ),
         );
@@ -774,54 +759,24 @@ class _AiOrbPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final center = size.center(Offset.zero);
 
-    for (int i = 0; i < 4; i++) {
-      final delayed = (progress + i * 0.24) % 1;
-
-      canvas.drawCircle(
-        center,
-        42 + delayed * 86,
-        Paint()
-          ..color = AppTheme.green.withOpacity((1 - delayed) * 0.22)
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 2.4,
-      );
-    }
-
     canvas.drawCircle(
       center,
-      42,
+      40,
       Paint()
         ..shader = const LinearGradient(
-          colors: [
-            AppTheme.orange,
-            AppTheme.green,
-            AppTheme.cyan,
-          ],
-        ).createShader(
-          Rect.fromCircle(center: center, radius: 42),
-        ),
+          colors: [AppTheme.orange, AppTheme.green, AppTheme.cyan],
+        ).createShader(Rect.fromCircle(center: center, radius: 40)),
     );
 
-    final particles = [
-      Offset(center.dx - 76, center.dy - 28),
-      Offset(center.dx + 72, center.dy - 44),
-      Offset(center.dx + 54, center.dy + 68),
-      Offset(center.dx - 48, center.dy + 72),
-    ];
-
-    for (int i = 0; i < particles.length; i++) {
-      final pulse = sin((progress * pi * 2) + i) * 0.5 + 0.5;
-
+    for (int i = 0; i < 4; i++) {
+      final delayed = (progress + i * 0.22) % 1;
       canvas.drawCircle(
-        particles[i],
-        4 + pulse * 2,
-        Paint()..color = AppTheme.orange.withOpacity(0.85),
-      );
-
-      canvas.drawCircle(
-        particles[i],
-        13 + pulse * 4,
-        Paint()..color = AppTheme.orange.withOpacity(0.08),
+        center,
+        42 + delayed * 88,
+        Paint()
+          ..color = AppTheme.green.withOpacity((1 - delayed) * 0.18)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 2.2,
       );
     }
   }
@@ -848,20 +803,17 @@ class _MapMarker extends StatelessWidget {
     return Column(
       children: [
         Container(
-          width: 44,
-          height: 44,
+          width: 50,
+          height: 50,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            color: color.withOpacity(0.15),
-            border: Border.all(
-              color: color.withOpacity(0.85),
-              width: 1.6,
-            ),
+            color: color.withOpacity(0.16),
+            border: Border.all(color: color.withOpacity(0.78), width: 1.5),
             boxShadow: [
               BoxShadow(
-                color: color.withOpacity(0.35),
-                blurRadius: 24,
-                spreadRadius: 2,
+                color: color.withOpacity(0.30),
+                blurRadius: 22,
+                spreadRadius: 1,
               ),
             ],
           ),
@@ -872,10 +824,8 @@ class _MapMarker extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
           decoration: BoxDecoration(
             color: AppTheme.glass,
-            borderRadius: BorderRadius.circular(30),
-            border: Border.all(
-              color: Colors.white.withOpacity(0.08),
-            ),
+            borderRadius: BorderRadius.circular(999),
+            border: Border.all(color: Colors.white.withOpacity(0.08)),
           ),
           child: Text(
             label,
@@ -897,15 +847,15 @@ class _ScooterMarker extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 68,
-      height: 68,
+      width: 70,
+      height: 70,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         boxShadow: [
           BoxShadow(
-            color: AppTheme.green.withOpacity(0.35),
-            blurRadius: 30,
-            spreadRadius: 4,
+            color: AppTheme.green.withOpacity(0.34),
+            blurRadius: 26,
+            spreadRadius: 3,
           ),
         ],
       ),
@@ -925,45 +875,37 @@ class _ScooterPainter extends CustomPainter {
       center,
       30,
       Paint()
-        ..color = AppTheme.green.withOpacity(0.14)
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 14),
+        ..color = AppTheme.green.withOpacity(0.12)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 12),
     );
 
     final bodyPaint = Paint()
       ..shader = const LinearGradient(
-        colors: [
-          AppTheme.orange,
-          AppTheme.green,
-        ],
+        colors: [AppTheme.orange, AppTheme.green],
       ).createShader(Offset.zero & size);
 
-    final darkPaint = Paint()..color = AppTheme.bg;
-    final whitePaint = Paint()..color = Colors.white.withOpacity(0.9);
+    final shadowPaint = Paint()..color = AppTheme.bg.withOpacity(0.8);
+    final wheelPaint = Paint()..color = Colors.white.withOpacity(0.92);
 
     canvas.drawRRect(
       RRect.fromRectAndRadius(
-        Rect.fromCenter(
-          center: Offset(center.dx + 3, center.dy),
-          width: 42,
-          height: 25,
-        ),
+        Rect.fromCenter(center: Offset(center.dx + 3, center.dy), width: 42, height: 24),
         const Radius.circular(14),
       ),
       bodyPaint,
     );
 
-    canvas.drawCircle(Offset(center.dx - 14, center.dy + 15), 8, darkPaint);
-    canvas.drawCircle(Offset(center.dx + 18, center.dy + 15), 8, darkPaint);
-
-    canvas.drawCircle(Offset(center.dx - 14, center.dy + 15), 3, whitePaint);
-    canvas.drawCircle(Offset(center.dx + 18, center.dy + 15), 3, whitePaint);
+    canvas.drawCircle(Offset(center.dx - 14, center.dy + 16), 8, shadowPaint);
+    canvas.drawCircle(Offset(center.dx + 18, center.dy + 16), 8, shadowPaint);
+    canvas.drawCircle(Offset(center.dx - 14, center.dy + 16), 3, wheelPaint);
+    canvas.drawCircle(Offset(center.dx + 18, center.dy + 16), 3, wheelPaint);
 
     canvas.drawRRect(
       RRect.fromRectAndRadius(
-        Rect.fromLTWH(center.dx + 4, center.dy - 15, 18, 10),
+        Rect.fromLTWH(center.dx + 5, center.dy - 15, 18, 11),
         const Radius.circular(6),
       ),
-      Paint()..color = AppTheme.bg.withOpacity(0.72),
+      Paint()..color = AppTheme.bg.withOpacity(0.74),
     );
 
     final handlePaint = Paint()
@@ -973,11 +915,10 @@ class _ScooterPainter extends CustomPainter {
 
     canvas.drawLine(
       Offset(center.dx + 18, center.dy - 8),
-      Offset(center.dx + 28, center.dy - 17),
+      Offset(center.dx + 30, center.dy - 18),
       handlePaint,
     );
-
-    canvas.drawCircle(Offset(center.dx + 31, center.dy - 18), 2.5, whitePaint);
+    canvas.drawCircle(Offset(center.dx + 32, center.dy - 19), 2.5, wheelPaint);
   }
 
   @override
@@ -989,362 +930,297 @@ class _DeliveryBottomSheet extends StatelessWidget {
   final int activeStep;
   final bool isDelivered;
   final int etaMinutes;
+  final bool isMoving;
 
   const _DeliveryBottomSheet({
     required this.food,
     required this.activeStep,
     required this.isDelivered,
     required this.etaMinutes,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(36),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
-        child: Container(
-          padding: const EdgeInsets.fromLTRB(18, 16, 18, 18),
-          decoration: BoxDecoration(
-            color: AppTheme.glass,
-            borderRadius: BorderRadius.circular(36),
-            border: Border.all(
-              color: Colors.white.withOpacity(0.10),
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.38),
-                blurRadius: 38,
-                offset: const Offset(0, 20),
-              ),
-            ],
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 46,
-                height: 5,
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.18),
-                  borderRadius: BorderRadius.circular(100),
-                ),
-              ),
-
-              const SizedBox(height: 18),
-
-              Row(
-                children: [
-                  Container(
-                    width: 66,
-                    height: 66,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(24),
-                      gradient: LinearGradient(
-                        colors: [
-                          food.color,
-                          AppTheme.green,
-                        ],
-                      ),
-                    ),
-                    child: Icon(
-                      food.icon,
-                      color: AppTheme.bg,
-                      size: 34,
-                    ),
-                  ),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          food.name,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 19,
-                            fontWeight: FontWeight.w900,
-                            letterSpacing: -0.5,
-                          ),
-                        ),
-                        const SizedBox(height: 5),
-                        Text(
-                          '${food.restaurant} · Extra cheese · Fries',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            color: AppTheme.muted,
-                            fontSize: 12.5,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 9,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.07),
-                      borderRadius: BorderRadius.circular(18),
-                      border: Border.all(
-                        color: Colors.white.withOpacity(0.08),
-                      ),
-                    ),
-                    child: Text(
-                      isDelivered ? 'Done' : '$etaMinutes min',
-                      style: const TextStyle(
-                        color: AppTheme.green,
-                        fontSize: 12.5,
-                        fontWeight: FontWeight.w900,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: 18),
-
-              _DeliveryTimeline(activeStep: activeStep),
-
-              const SizedBox(height: 18),
-
-              AnimatedContainer(
-                duration: const Duration(milliseconds: 480),
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  color: isDelivered
-                      ? AppTheme.green.withOpacity(0.13)
-                      : Colors.white.withOpacity(0.055),
-                  borderRadius: BorderRadius.circular(26),
-                  border: Border.all(
-                    color: isDelivered
-                        ? AppTheme.green.withOpacity(0.28)
-                        : Colors.white.withOpacity(0.07),
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 47,
-                      height: 47,
-                      decoration: const BoxDecoration(
-                        shape: BoxShape.circle,
-                        gradient: LinearGradient(
-                          colors: [
-                            AppTheme.green,
-                            AppTheme.cyan,
-                          ],
-                        ),
-                      ),
-                      child: const Center(
-                        child: Text(
-                          'HZ',
-                          style: TextStyle(
-                            color: AppTheme.bg,
-                            fontWeight: FontWeight.w900,
-                            fontSize: 14,
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: AnimatedSwitcher(
-                        duration: const Duration(milliseconds: 400),
-                        child: Column(
-                          key: ValueKey(isDelivered),
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              isDelivered
-                                  ? 'Hamza delivered your order'
-                                  : 'Hamza is your delivery rider',
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 14.5,
-                                fontWeight: FontWeight.w800,
-                              ),
-                            ),
-                            const SizedBox(height: 3),
-                            Text(
-                              isDelivered
-                                  ? 'Thank you for ordering with us'
-                                  : 'Honda 125 · KHI 5821 · 4.9 rating',
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                color: AppTheme.muted,
-                                fontSize: 12,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    _MiniActionButton(
-                      icon: Icons.call_rounded,
-                      color: AppTheme.green,
-                      onTap: () {},
-                    ),
-                    const SizedBox(width: 9),
-                    _MiniActionButton(
-                      icon: Icons.chat_bubble_rounded,
-                      color: AppTheme.cyan,
-                      onTap: () {},
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _DeliveryTimeline extends StatelessWidget {
-  final int activeStep;
-
-  const _DeliveryTimeline({
-    required this.activeStep,
+    required this.isMoving,
   });
 
   @override
   Widget build(BuildContext context) {
     final steps = [
-      _StepData('AI', Icons.auto_awesome_rounded),
-      _StepData('Accepted', Icons.receipt_long_rounded),
-      _StepData('Cooking', Icons.local_fire_department_rounded),
-      _StepData('On way', Icons.delivery_dining_rounded),
-      _StepData('Done', Icons.check_rounded),
+      _TimelineEntry(
+        title: 'Order confirmed',
+        subtitle: 'Restaurant accepted the order',
+        icon: Icons.check_circle_rounded,
+      ),
+      _TimelineEntry(
+        title: 'Preparing',
+        subtitle: 'Chef is preparing your meal fresh',
+        icon: Icons.kitchen_rounded,
+      ),
+      _TimelineEntry(
+        title: 'Picked up',
+        subtitle: 'Rider collected the package',
+        icon: Icons.local_shipping_rounded,
+      ),
+      _TimelineEntry(
+        title: 'En route',
+        subtitle: 'The route is being tracked live',
+        icon: Icons.route_rounded,
+      ),
+      _TimelineEntry(
+        title: 'Delivered',
+        subtitle: 'Order handed over successfully',
+        icon: Icons.celebration_rounded,
+      ),
     ];
 
-    return Row(
-      children: List.generate(steps.length, (index) {
-        final isActive = index <= activeStep;
-        final isCurrent = index == activeStep;
-
-        return Expanded(
-          child: Row(
+    return GlassCard(
+      padding: const EdgeInsets.all(16),
+      borderRadius: BorderRadius.circular(32),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
             children: [
               Expanded(
                 child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    AnimatedContainer(
-                      duration: const Duration(milliseconds: 420),
-                      width: isCurrent ? 42 : 36,
-                      height: isCurrent ? 42 : 36,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: isActive
-                            ? AppTheme.green
-                            : Colors.white.withOpacity(0.075),
-                        boxShadow: isCurrent
-                            ? [
-                                BoxShadow(
-                                  color: AppTheme.green.withOpacity(0.28),
-                                  blurRadius: 20,
-                                  spreadRadius: 2,
-                                ),
-                              ]
-                            : [],
-                      ),
-                      child: Icon(
-                        steps[index].icon,
-                        color: isActive
-                            ? AppTheme.bg
-                            : Colors.white.withOpacity(0.38),
-                        size: 18,
-                      ),
-                    ),
-                    const SizedBox(height: 7),
                     Text(
-                      steps[index].label,
+                      isDelivered ? 'Delivered successfully' : '$etaMinutes min away',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        color: isActive
-                            ? Colors.white
-                            : Colors.white.withOpacity(0.35),
-                        fontSize: 10.5,
-                        fontWeight: FontWeight.w700,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: -0.4,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      isDelivered ? 'Enjoy your meal.' : '${food.restaurant} · live route tracking',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: AppTheme.muted,
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w500,
                       ),
                     ),
                   ],
                 ),
               ),
-              if (index != steps.length - 1)
-                AnimatedContainer(
-                  duration: const Duration(milliseconds: 420),
-                  width: 18,
-                  height: 2,
-                  margin: const EdgeInsets.only(bottom: 22),
-                  decoration: BoxDecoration(
-                    color: index < activeStep
-                        ? AppTheme.green
-                        : Colors.white.withOpacity(0.10),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
+              const SizedBox(width: 12),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.08),
+                  borderRadius: BorderRadius.circular(18),
+                  border: Border.all(color: Colors.white.withOpacity(0.08)),
                 ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.timer_rounded, color: AppTheme.green, size: 16),
+                    const SizedBox(width: 6),
+                    AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 260),
+                      child: Text(
+                        isDelivered ? 'Now' : '$etaMinutes min',
+                        key: ValueKey(etaMinutes),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ],
           ),
-        );
-      }),
-    );
-  }
-}
-
-class _StepData {
-  final String label;
-  final IconData icon;
-
-  const _StepData(this.label, this.icon);
-}
-
-class _MiniActionButton extends StatelessWidget {
-  final IconData icon;
-  final Color color;
-  final VoidCallback onTap;
-
-  const _MiniActionButton({
-    required this.icon,
-    required this.color,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: color.withOpacity(0.13),
-      borderRadius: BorderRadius.circular(17),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(17),
-        child: Container(
-          width: 43,
-          height: 43,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(17),
-            border: Border.all(
-              color: color.withOpacity(0.24),
+          const SizedBox(height: 14),
+          PremiumSurface(
+            padding: const EdgeInsets.all(14),
+            borderRadius: BorderRadius.circular(24),
+            child: Row(
+              children: [
+                Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: LinearGradient(
+                      colors: isDelivered
+                          ? const [AppTheme.green, Color(0xFFB5FFE0)]
+                          : const [AppTheme.orange, AppTheme.green],
+                    ),
+                  ),
+                  child: Icon(
+                    isDelivered ? Icons.check_rounded : Icons.person_rounded,
+                    color: AppTheme.bg,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                const Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Rider: Hamza',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 14.5,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                      SizedBox(height: 4),
+                      Text(
+                        '4.9 rating · 1,200+ deliveries · scooter',
+                        style: TextStyle(
+                          color: AppTheme.muted,
+                          fontSize: 12,
+                          height: 1.3,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.08),
+                    borderRadius: BorderRadius.circular(999),
+                    border: Border.all(color: Colors.white.withOpacity(0.08)),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: const [
+                      Icon(Icons.call_rounded, color: AppTheme.green, size: 16),
+                      SizedBox(width: 6),
+                      Text(
+                        'Call',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
           ),
-          child: Icon(
-            icon,
-            color: color,
-            size: 20,
+          const SizedBox(height: 14),
+          Expanded(
+            child: SingleChildScrollView(
+              physics: const BouncingScrollPhysics(),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Order timeline',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 15.5,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  ...List.generate(steps.length, (index) {
+                    final step = steps[index];
+                    final completed = index < activeStep;
+                    final active = index == activeStep;
+
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: TimelineStepCard(
+                        title: step.title,
+                        subtitle: step.subtitle,
+                        icon: step.icon,
+                        active: active,
+                        completed: completed,
+                      ),
+                    );
+                  }),
+                  const SizedBox(height: 2),
+                  AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 260),
+                    child: isDelivered
+                        ? GlassCard(
+                            key: const ValueKey('delivered'),
+                            padding: const EdgeInsets.all(16),
+                            borderRadius: BorderRadius.circular(24),
+                            child: Row(
+                              children: [
+                                Container(
+                                  width: 44,
+                                  height: 44,
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    gradient: const LinearGradient(
+                                      colors: [AppTheme.green, Color(0xFFA6FFD9)],
+                                    ),
+                                  ),
+                                  child: const Icon(Icons.celebration_rounded, color: AppTheme.bg),
+                                ),
+                                const SizedBox(width: 12),
+                                const Expanded(
+                                  child: Text(
+                                    'Delivery completed with a premium success state and a clear next action for the portfolio showcase.',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 12.8,
+                                      height: 1.4,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          )
+                        : GlassCard(
+                            key: const ValueKey('moving'),
+                            padding: const EdgeInsets.all(14),
+                            borderRadius: BorderRadius.circular(24),
+                            child: Row(
+                              children: [
+                                const Icon(Icons.route_rounded, color: AppTheme.orange),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: Text(
+                                    isMoving
+                                        ? 'Route is active and the scooter is moving smoothly.'
+                                        : 'Waiting for the rider handoff to complete.',
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 12.8,
+                                      height: 1.4,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                  ),
+                ],
+              ),
+            ),
           ),
-        ),
+        ],
       ),
     );
   }
+}
+
+class _TimelineEntry {
+  final String title;
+  final String subtitle;
+  final IconData icon;
+
+  const _TimelineEntry({
+    required this.title,
+    required this.subtitle,
+    required this.icon,
+  });
 }
