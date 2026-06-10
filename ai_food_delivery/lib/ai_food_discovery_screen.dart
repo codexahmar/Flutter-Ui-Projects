@@ -91,7 +91,11 @@ class _AiFoodDiscoveryScreenState extends State<AiFoodDiscoveryScreen>
                 gradient: LinearGradient(
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
-                  colors: [Colors.transparent, Color(0x11000000), Color(0xB8000000)],
+                  colors: [
+                    Colors.transparent,
+                    Color(0x11000000),
+                    Color(0xB8000000),
+                  ],
                 ),
               ),
             ),
@@ -116,7 +120,32 @@ class _AiFoodDiscoveryScreenState extends State<AiFoodDiscoveryScreen>
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const _TopBar(),
+                    Row(
+                      children: [
+                        const Expanded(
+                          child: PremiumSearchBar(
+                            hintText: 'Crave something? Search here...',
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Container(
+                          width: 52,
+                          height: 52,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: Colors.white.withOpacity(0.06),
+                            border: Border.all(
+                              color: Colors.white.withOpacity(0.08),
+                            ),
+                          ),
+                          child: const Icon(
+                            Icons.person_rounded,
+                            color: Colors.white,
+                            size: 24,
+                          ),
+                        ),
+                      ],
+                    ),
                     const SizedBox(height: 24),
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -126,17 +155,17 @@ class _AiFoodDiscoveryScreenState extends State<AiFoodDiscoveryScreen>
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                'AI-curated food that feels\nlike a premium product.',
+                                'Fresh flavors,\ndelivered fast.',
                                 style: Theme.of(context).textTheme.displayLarge,
                               ),
                               const SizedBox(height: 12),
                               const Text(
-                                'A polished food delivery concept with real photography, live tracking visuals, and a reel-ready dark theme.',
+                                'Discover top-rated dishes and local favorites, selected for quality and speed.',
                                 style: TextStyle(
                                   color: AppTheme.muted,
-                                  fontSize: 13.5,
-                                  height: 1.45,
-                                  fontWeight: FontWeight.w500,
+                                  fontSize: 14,
+                                  height: 1.5,
+                                  fontWeight: FontWeight.w400,
                                 ),
                               ),
                             ],
@@ -148,7 +177,9 @@ class _AiFoodDiscoveryScreenState extends State<AiFoodDiscoveryScreen>
                           builder: (context, _) {
                             return CustomPaint(
                               size: const Size(98, 98),
-                              painter: _RecommendationOrbPainter(_orbController.value),
+                              painter: _RecommendationOrbPainter(
+                                _orbController.value,
+                              ),
                               child: const SizedBox(
                                 width: 98,
                                 height: 98,
@@ -175,16 +206,24 @@ class _AiFoodDiscoveryScreenState extends State<AiFoodDiscoveryScreen>
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Row(
+                                Wrap(
+                                  spacing: 10,
+                                  runSpacing: 8,
+                                  crossAxisAlignment: WrapCrossAlignment.center,
                                   children: [
                                     Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 10,
+                                        vertical: 7,
+                                      ),
                                       decoration: BoxDecoration(
                                         color: AppTheme.green.withOpacity(0.14),
-                                        borderRadius: BorderRadius.circular(999),
+                                        borderRadius: BorderRadius.circular(
+                                          999,
+                                        ),
                                       ),
                                       child: const Text(
-                                        'AI recommendation',
+                                        'Top Choice',
                                         style: TextStyle(
                                           color: AppTheme.green,
                                           fontSize: 11.5,
@@ -192,16 +231,24 @@ class _AiFoodDiscoveryScreenState extends State<AiFoodDiscoveryScreen>
                                         ),
                                       ),
                                     ),
-                                    const SizedBox(width: 10),
-                                    const Icon(Icons.bolt_rounded, color: AppTheme.orange, size: 18),
-                                    const SizedBox(width: 4),
-                                    const Text(
-                                      '98% match',
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w800,
-                                      ),
+                                    Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: const [
+                                        Icon(
+                                          Icons.bolt_rounded,
+                                          color: AppTheme.orange,
+                                          size: 18,
+                                        ),
+                                        SizedBox(width: 4),
+                                        Text(
+                                          '98% match',
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w800,
+                                          ),
+                                        ),
+                                      ],
                                     ),
                                   ],
                                 ),
@@ -234,7 +281,8 @@ class _AiFoodDiscoveryScreenState extends State<AiFoodDiscoveryScreen>
                                   children: [
                                     _PillStat(
                                       icon: Icons.star_rounded,
-                                      label: _selectedFood.rating.toStringAsFixed(1),
+                                      label: _selectedFood.rating
+                                          .toStringAsFixed(1),
                                       accent: AppTheme.orange,
                                     ),
                                     const SizedBox(width: 8),
@@ -244,10 +292,12 @@ class _AiFoodDiscoveryScreenState extends State<AiFoodDiscoveryScreen>
                                       accent: AppTheme.cyan,
                                     ),
                                     const SizedBox(width: 8),
-                                    _PillStat(
-                                      icon: Icons.local_offer_rounded,
-                                      label: _selectedFood.discount,
-                                      accent: AppTheme.green,
+                                    Expanded(
+                                      child: _PillStat(
+                                        icon: Icons.local_offer_rounded,
+                                        label: _selectedFood.discount,
+                                        accent: AppTheme.green,
+                                      ),
                                     ),
                                   ],
                                 ),
@@ -268,10 +318,6 @@ class _AiFoodDiscoveryScreenState extends State<AiFoodDiscoveryScreen>
                       ),
                     ),
                     const SizedBox(height: 18),
-                    const PremiumSearchBar(
-                      hintText: 'Search burgers, pizza, drinks or a nearby restaurant',
-                    ),
-                    const SizedBox(height: 18),
                     SizedBox(
                       height: 48,
                       child: ListView.separated(
@@ -285,7 +331,9 @@ class _AiFoodDiscoveryScreenState extends State<AiFoodDiscoveryScreen>
                             label: category.label,
                             icon: category.icon,
                             selected: selected,
-                            accentColor: selected ? AppTheme.green : AppTheme.cyan,
+                            accentColor: selected
+                                ? AppTheme.green
+                                : AppTheme.cyan,
                             onTap: () => _selectCategory(index),
                           );
                         },
@@ -296,7 +344,8 @@ class _AiFoodDiscoveryScreenState extends State<AiFoodDiscoveryScreen>
                     const SizedBox(height: 22),
                     const PremiumSectionHeader(
                       title: 'Featured restaurants',
-                      subtitle: 'Premium spots with standout photography and fast delivery.',
+                      subtitle:
+                          'Premium spots with standout photography and fast delivery.',
                     ),
                     const SizedBox(height: 14),
                     SizedBox(
@@ -316,7 +365,8 @@ class _AiFoodDiscoveryScreenState extends State<AiFoodDiscoveryScreen>
                     const SizedBox(height: 24),
                     PremiumSectionHeader(
                       title: 'Curated for you',
-                      subtitle: 'Tap a dish to preview the AI-selected item and continue to checkout.',
+                      subtitle:
+                          'Tap a dish to preview the AI-selected item and continue to checkout.',
                       actionLabel: 'View all',
                       onAction: () {},
                     ),
@@ -345,40 +395,9 @@ class _AiFoodDiscoveryScreenState extends State<AiFoodDiscoveryScreen>
                         separatorBuilder: (_, __) => const SizedBox(height: 14),
                         itemCount: visibleFoods.length,
                       ),
-                    const SizedBox(height: 18),
-                    PremiumSurface(
-                      padding: const EdgeInsets.all(16),
-                      borderRadius: BorderRadius.circular(28),
-                      child: Row(
-                        children: [
-                          const Icon(Icons.bolt_rounded, color: AppTheme.orange),
-                          const SizedBox(width: 10),
-                          const Expanded(
-                            child: Text(
-                              'AI optimized for freshness, rating, and fastest ETA.',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 13.5,
-                                fontWeight: FontWeight.w700,
-                                height: 1.35,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Text(
-                            _selectedFood.price,
-                            style: const TextStyle(
-                              color: AppTheme.green,
-                              fontSize: 15,
-                              fontWeight: FontWeight.w900,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 18),
+                    const SizedBox(height: 24),
                     PrimaryActionButton(
-                      label: 'Continue with ${_selectedFood.restaurant}',
+                      label: 'Order from ${_selectedFood.restaurant}',
                       icon: Icons.arrow_forward_rounded,
                       onTap: _goToConfirmation,
                     ),
@@ -410,7 +429,11 @@ class _TopBar extends StatelessWidget {
               colors: [Color(0xFF1A2330), Color(0xFF0D141B)],
             ),
           ),
-          child: const Icon(Icons.person_rounded, color: Colors.white, size: 22),
+          child: const Icon(
+            Icons.person_rounded,
+            color: Colors.white,
+            size: 22,
+          ),
         ),
         const SizedBox(width: 12),
         const Expanded(
@@ -447,7 +470,10 @@ class _TopBar extends StatelessWidget {
             color: Colors.white.withOpacity(0.07),
             border: Border.all(color: Colors.white.withOpacity(0.08)),
           ),
-          child: const Icon(Icons.notifications_none_rounded, color: Colors.white),
+          child: const Icon(
+            Icons.notifications_none_rounded,
+            color: Colors.white,
+          ),
         ),
       ],
     );
@@ -459,7 +485,11 @@ class _PillStat extends StatelessWidget {
   final String label;
   final Color accent;
 
-  const _PillStat({required this.icon, required this.label, required this.accent});
+  const _PillStat({
+    required this.icon,
+    required this.label,
+    required this.accent,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -509,9 +539,11 @@ class _RestaurantCard extends StatelessWidget {
               height: 96,
               child: PremiumNetworkImage(
                 imageUrl: restaurant.imageUrl,
-                heroTag: restaurant.imageUrl,
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(26)),
-                overlayColors: const [Colors.transparent, Color(0xCC000000)],
+                heroTag: 'res_${restaurant.imageUrl}',
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(26),
+                ),
+                overlayColors: const [Colors.transparent, Color(0x99000000)],
               ),
             ),
             Padding(
@@ -535,7 +567,10 @@ class _RestaurantCard extends StatelessWidget {
                       ),
                       const SizedBox(width: 8),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
                         decoration: BoxDecoration(
                           color: restaurant.accent.withOpacity(0.14),
                           borderRadius: BorderRadius.circular(999),
@@ -565,7 +600,11 @@ class _RestaurantCard extends StatelessWidget {
                   const SizedBox(height: 8),
                   Row(
                     children: [
-                      const Icon(Icons.star_rounded, color: AppTheme.orange, size: 16),
+                      const Icon(
+                        Icons.star_rounded,
+                        color: AppTheme.orange,
+                        size: 16,
+                      ),
                       const SizedBox(width: 4),
                       Text(
                         restaurant.rating.toStringAsFixed(1),
@@ -601,7 +640,11 @@ class _FoodCard extends StatelessWidget {
   final bool selected;
   final VoidCallback onTap;
 
-  const _FoodCard({required this.food, required this.selected, required this.onTap});
+  const _FoodCard({
+    required this.food,
+    required this.selected,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -616,9 +659,13 @@ class _FoodCard extends StatelessWidget {
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(30),
-            color: selected ? Colors.white.withOpacity(0.095) : Colors.white.withOpacity(0.055),
+            color: selected
+                ? Colors.white.withOpacity(0.095)
+                : Colors.white.withOpacity(0.055),
             border: Border.all(
-              color: selected ? food.accent.withOpacity(0.55) : Colors.white.withOpacity(0.08),
+              color: selected
+                  ? food.accent.withOpacity(0.55)
+                  : Colors.white.withOpacity(0.08),
             ),
             boxShadow: selected
                 ? [
@@ -637,7 +684,7 @@ class _FoodCard extends StatelessWidget {
                 height: 96,
                 child: PremiumNetworkImage(
                   imageUrl: food.imageUrl,
-                  heroTag: food.imageUrl,
+                  heroTag: '${food.imageUrl}_list',
                   borderRadius: BorderRadius.circular(26),
                 ),
               ),
@@ -663,7 +710,10 @@ class _FoodCard extends StatelessWidget {
                         ),
                         const SizedBox(width: 8),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
                           decoration: BoxDecoration(
                             color: food.accent.withOpacity(0.14),
                             borderRadius: BorderRadius.circular(999),
@@ -702,7 +752,11 @@ class _FoodCard extends StatelessWidget {
                     const SizedBox(height: 10),
                     Row(
                       children: [
-                        const Icon(Icons.star_rounded, color: AppTheme.orange, size: 16),
+                        const Icon(
+                          Icons.star_rounded,
+                          color: AppTheme.orange,
+                          size: 16,
+                        ),
                         const SizedBox(width: 4),
                         Text(
                           food.rating.toStringAsFixed(1),
@@ -757,9 +811,14 @@ class _DiscoveryBackdrop extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return CustomPaint(
-      painter: _DiscoveryBackdropPainter(),
-      child: const SizedBox.expand(),
+    return Container(
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [AppTheme.bg, AppTheme.bgAlt],
+        ),
+      ),
     );
   }
 }
@@ -788,18 +847,30 @@ class _DiscoveryBackdropPainter extends CustomPainter {
       Offset(size.width * 0.82, size.height * 0.16),
       220,
       Paint()
-        ..shader = RadialGradient(
-          colors: [AppTheme.green.withOpacity(0.20), Colors.transparent],
-        ).createShader(Rect.fromCircle(center: Offset(size.width * 0.82, size.height * 0.16), radius: 220)),
+        ..shader =
+            RadialGradient(
+              colors: [AppTheme.green.withOpacity(0.20), Colors.transparent],
+            ).createShader(
+              Rect.fromCircle(
+                center: Offset(size.width * 0.82, size.height * 0.16),
+                radius: 220,
+              ),
+            ),
     );
 
     canvas.drawCircle(
       Offset(size.width * 0.12, size.height * 0.22),
       180,
       Paint()
-        ..shader = RadialGradient(
-          colors: [AppTheme.orange.withOpacity(0.18), Colors.transparent],
-        ).createShader(Rect.fromCircle(center: Offset(size.width * 0.12, size.height * 0.22), radius: 180)),
+        ..shader =
+            RadialGradient(
+              colors: [AppTheme.orange.withOpacity(0.18), Colors.transparent],
+            ).createShader(
+              Rect.fromCircle(
+                center: Offset(size.width * 0.12, size.height * 0.22),
+                radius: 180,
+              ),
+            ),
     );
 
     final gridPaint = Paint()..color = Colors.white.withOpacity(0.04);
@@ -824,19 +895,40 @@ class _DiscoveryBackdropPainter extends CustomPainter {
     canvas.drawPath(
       Path()
         ..moveTo(-40, size.height * 0.32)
-        ..cubicTo(size.width * 0.28, size.height * 0.18, size.width * 0.46, size.height * 0.46, size.width + 40, size.height * 0.28),
+        ..cubicTo(
+          size.width * 0.28,
+          size.height * 0.18,
+          size.width * 0.46,
+          size.height * 0.46,
+          size.width + 40,
+          size.height * 0.28,
+        ),
       roads,
     );
     canvas.drawPath(
       Path()
         ..moveTo(size.width * 0.08, -40)
-        ..cubicTo(size.width * 0.10, size.height * 0.24, size.width * 0.32, size.height * 0.56, size.width * 0.20, size.height + 40),
+        ..cubicTo(
+          size.width * 0.10,
+          size.height * 0.24,
+          size.width * 0.32,
+          size.height * 0.56,
+          size.width * 0.20,
+          size.height + 40,
+        ),
       roadsThin,
     );
     canvas.drawPath(
       Path()
         ..moveTo(size.width + 30, size.height * 0.70)
-        ..cubicTo(size.width * 0.72, size.height * 0.58, size.width * 0.48, size.height * 0.84, -50, size.height * 0.83),
+        ..cubicTo(
+          size.width * 0.72,
+          size.height * 0.58,
+          size.width * 0.48,
+          size.height * 0.84,
+          -50,
+          size.height * 0.83,
+        ),
       roads,
     );
 
@@ -862,9 +954,21 @@ class _DiscoveryBackdropPainter extends CustomPainter {
       canvas.drawRRect(rRect, border);
     }
 
-    _drawLabel(canvas, 'North Ridge', Offset(size.width * 0.18, size.height * 0.20));
-    _drawLabel(canvas, 'Food District', Offset(size.width * 0.58, size.height * 0.40));
-    _drawLabel(canvas, 'Central Loop', Offset(size.width * 0.34, size.height * 0.70));
+    _drawLabel(
+      canvas,
+      'North Ridge',
+      Offset(size.width * 0.18, size.height * 0.20),
+    );
+    _drawLabel(
+      canvas,
+      'Food District',
+      Offset(size.width * 0.58, size.height * 0.40),
+    );
+    _drawLabel(
+      canvas,
+      'Central Loop',
+      Offset(size.width * 0.34, size.height * 0.70),
+    );
   }
 
   void _drawLabel(Canvas canvas, String text, Offset offset) {

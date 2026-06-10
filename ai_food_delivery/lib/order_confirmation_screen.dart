@@ -8,13 +8,11 @@ import 'shared_widgets.dart';
 class OrderConfirmationScreen extends StatefulWidget {
   final FoodItem food;
 
-  const OrderConfirmationScreen({
-    super.key,
-    required this.food,
-  });
+  const OrderConfirmationScreen({super.key, required this.food});
 
   @override
-  State<OrderConfirmationScreen> createState() => _OrderConfirmationScreenState();
+  State<OrderConfirmationScreen> createState() =>
+      _OrderConfirmationScreenState();
 }
 
 class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
@@ -42,7 +40,9 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
   int get _deliveryFee => 120;
   int get _serviceFee => 49;
   int get _discount => 100 + (quantity > 1 ? 40 : 0);
-  int get _total => (_basePrice + _addonsPrice + _deliveryFee + _serviceFee - _discount).clamp(0, 999999);
+  int get _total =>
+      (_basePrice + _addonsPrice + _deliveryFee + _serviceFee - _discount)
+          .clamp(0, 999999);
 
   void _incrementQuantity() {
     setState(() => quantity += 1);
@@ -97,7 +97,11 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
                 gradient: LinearGradient(
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
-                  colors: [Colors.transparent, Color(0x10000000), Color(0xCC000000)],
+                  colors: [
+                    Colors.transparent,
+                    Color(0x10000000),
+                    Color(0xCC000000),
+                  ],
                 ),
               ),
             ),
@@ -159,37 +163,22 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
                               PremiumNetworkImage(
                                 imageUrl: food.imageUrl,
                                 heroTag: food.imageUrl,
-                                borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+                                borderRadius: const BorderRadius.vertical(
+                                  top: Radius.circular(32),
+                                ),
                                 overlayColors: const [
                                   Colors.transparent,
-                                  Color(0xCC000000),
+                                  Color(0x99000000),
                                 ],
-                              ),
-                              Positioned(
-                                left: 16,
-                                top: 16,
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 7),
-                                  decoration: BoxDecoration(
-                                    color: Colors.black.withOpacity(0.34),
-                                    borderRadius: BorderRadius.circular(999),
-                                    border: Border.all(color: Colors.white.withOpacity(0.08)),
-                                  ),
-                                  child: const Text(
-                                    'Secure checkout',
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 11.5,
-                                      fontWeight: FontWeight.w800,
-                                    ),
-                                  ),
-                                ),
                               ),
                               Positioned(
                                 right: 16,
                                 top: 16,
                                 child: Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 7),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 11,
+                                    vertical: 7,
+                                  ),
                                   decoration: BoxDecoration(
                                     color: food.accent.withOpacity(0.16),
                                     borderRadius: BorderRadius.circular(999),
@@ -208,22 +197,23 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
                                 left: 16,
                                 right: 16,
                                 bottom: 16,
-                                child: Row(
+                                child: Wrap(
+                                  spacing: 8,
+                                  runSpacing: 8,
                                   children: [
                                     _InfoChip(
                                       label: food.restaurant,
                                       icon: Icons.storefront_rounded,
                                       accent: AppTheme.green,
                                     ),
-                                    const SizedBox(width: 8),
                                     _InfoChip(
                                       label: food.time,
                                       icon: Icons.schedule_rounded,
                                       accent: AppTheme.orange,
                                     ),
-                                    const Spacer(),
                                     _InfoChip(
-                                      label: '${food.rating.toStringAsFixed(1)} rating',
+                                      label:
+                                          '${food.rating.toStringAsFixed(1)} rating',
                                       icon: Icons.star_rounded,
                                       accent: AppTheme.cyan,
                                     ),
@@ -326,9 +316,13 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
                         Wrap(
                           spacing: 10,
                           runSpacing: 10,
-                          children: List.generate(_extraOptions.length, (index) {
+                          children: List.generate(_extraOptions.length, (
+                            index,
+                          ) {
                             final option = _extraOptions[index];
-                            final selected = selectedAddonIndices.contains(index);
+                            final selected = selectedAddonIndices.contains(
+                              index,
+                            );
 
                             return _AddonChip(
                               label: option.label,
@@ -392,7 +386,11 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
                               const SizedBox(height: 10),
                               Row(
                                 children: const [
-                                  Icon(Icons.credit_card_rounded, color: AppTheme.green, size: 18),
+                                  Icon(
+                                    Icons.credit_card_rounded,
+                                    color: AppTheme.green,
+                                    size: 18,
+                                  ),
                                   SizedBox(width: 8),
                                   Expanded(
                                     child: Text(
@@ -430,20 +428,33 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
                           ),
                         ),
                         const SizedBox(height: 14),
-                        PriceLine(label: 'Meal subtotal', value: 'Rs. $_basePrice'),
+                        PriceLine(
+                          label: 'Meal subtotal',
+                          value: 'Rs. $_basePrice',
+                        ),
                         const SizedBox(height: 12),
                         PriceLine(label: 'Add-ons', value: 'Rs. $_addonsPrice'),
                         const SizedBox(height: 12),
-                        const PriceLine(label: 'Delivery fee', value: 'Rs. 120'),
+                        const PriceLine(
+                          label: 'Delivery fee',
+                          value: 'Rs. 120',
+                        ),
                         const SizedBox(height: 12),
                         const PriceLine(label: 'Service fee', value: 'Rs. 49'),
                         const SizedBox(height: 12),
-                        PriceLine(label: 'AI discount', value: '- Rs. $_discount'),
+                        PriceLine(
+                          label: 'AI discount',
+                          value: '- Rs. $_discount',
+                        ),
                         const Padding(
                           padding: EdgeInsets.symmetric(vertical: 14),
                           child: Divider(),
                         ),
-                        PriceLine(label: 'Total', value: 'Rs. $_total', emphasize: true),
+                        PriceLine(
+                          label: 'Total',
+                          value: 'Rs. $_total',
+                          emphasize: true,
+                        ),
                       ],
                     ),
                   ),
@@ -459,7 +470,9 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
                                 SizedBox(
                                   width: 18,
                                   height: 18,
-                                  child: CircularProgressIndicator(strokeWidth: 2.2),
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2.2,
+                                  ),
                                 ),
                                 SizedBox(width: 10),
                                 Text(
@@ -495,9 +508,14 @@ class _ConfirmationBackdrop extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return CustomPaint(
-      painter: _ConfirmationBackdropPainter(),
-      child: const SizedBox.expand(),
+    return Container(
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [AppTheme.bg, AppTheme.bgAlt],
+        ),
+      ),
     );
   }
 }
@@ -513,11 +531,7 @@ class _ConfirmationBackdropPainter extends CustomPainter {
         ..shader = const LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [
-            AppTheme.bg,
-            AppTheme.bgAlt,
-            Color(0xFF111820),
-          ],
+          colors: [AppTheme.bg, AppTheme.bgAlt, Color(0xFF111820)],
         ).createShader(rect),
     );
 
@@ -525,23 +539,36 @@ class _ConfirmationBackdropPainter extends CustomPainter {
       Offset(size.width * 0.82, size.height * 0.16),
       220,
       Paint()
-        ..shader = RadialGradient(
-          colors: [AppTheme.green.withOpacity(0.18), Colors.transparent],
-        ).createShader(Rect.fromCircle(center: Offset(size.width * 0.82, size.height * 0.16), radius: 220)),
+        ..shader =
+            RadialGradient(
+              colors: [AppTheme.green.withOpacity(0.18), Colors.transparent],
+            ).createShader(
+              Rect.fromCircle(
+                center: Offset(size.width * 0.82, size.height * 0.16),
+                radius: 220,
+              ),
+            ),
     );
 
     canvas.drawCircle(
       Offset(size.width * 0.16, size.height * 0.30),
       200,
       Paint()
-        ..shader = RadialGradient(
-          colors: [AppTheme.orange.withOpacity(0.14), Colors.transparent],
-        ).createShader(Rect.fromCircle(center: Offset(size.width * 0.16, size.height * 0.30), radius: 200)),
+        ..shader =
+            RadialGradient(
+              colors: [AppTheme.orange.withOpacity(0.14), Colors.transparent],
+            ).createShader(
+              Rect.fromCircle(
+                center: Offset(size.width * 0.16, size.height * 0.30),
+                radius: 200,
+              ),
+            ),
     );
   }
 
   @override
-  bool shouldRepaint(covariant _ConfirmationBackdropPainter oldDelegate) => false;
+  bool shouldRepaint(covariant _ConfirmationBackdropPainter oldDelegate) =>
+      false;
 }
 
 class _Header extends StatelessWidget {
@@ -567,28 +594,9 @@ class _Header extends StatelessWidget {
           ),
         ),
         const Spacer(),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
-          decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.07),
-            borderRadius: BorderRadius.circular(999),
-            border: Border.all(color: Colors.white.withOpacity(0.08)),
-          ),
-          child: const Row(
-            children: [
-              Icon(Icons.lock_rounded, color: AppTheme.green, size: 16),
-              SizedBox(width: 6),
-              Text(
-                'Secure order',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
-            ],
-          ),
-        ),
+        Text('Checkout', style: Theme.of(context).textTheme.titleLarge),
+        const Spacer(),
+        const SizedBox(width: 46),
       ],
     );
   }
@@ -625,10 +633,14 @@ class _AddonChip extends StatelessWidget {
           duration: const Duration(milliseconds: 220),
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
           decoration: BoxDecoration(
-            color: selected ? AppTheme.green.withOpacity(0.16) : Colors.white.withOpacity(0.055),
+            color: selected
+                ? AppTheme.green.withOpacity(0.16)
+                : Colors.white.withOpacity(0.055),
             borderRadius: BorderRadius.circular(999),
             border: Border.all(
-              color: selected ? AppTheme.green.withOpacity(0.55) : Colors.white.withOpacity(0.08),
+              color: selected
+                  ? AppTheme.green.withOpacity(0.55)
+                  : Colors.white.withOpacity(0.08),
             ),
           ),
           child: Row(
@@ -664,37 +676,35 @@ class _InfoChip extends StatelessWidget {
   final IconData icon;
   final Color accent;
 
-  const _InfoChip({required this.label, required this.icon, required this.accent});
+  const _InfoChip({
+    required this.label,
+    required this.icon,
+    required this.accent,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return Flexible(
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-        decoration: BoxDecoration(
-          color: Colors.black.withOpacity(0.34),
-          borderRadius: BorderRadius.circular(999),
-          border: Border.all(color: Colors.white.withOpacity(0.08)),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, color: accent, size: 14),
-            const SizedBox(width: 4),
-            Expanded(
-              child: Text(
-                label,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 11.2,
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.black.withOpacity(0.34),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: Colors.white.withOpacity(0.08)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, color: accent, size: 14),
+          const SizedBox(width: 5),
+          Text(
+            label,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 11.2,
+              fontWeight: FontWeight.w800,
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

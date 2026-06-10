@@ -1,38 +1,39 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class AppTheme {
-  static const Color bg = Color(0xFF05070D);
-  static const Color bgAlt = Color(0xFF09101A);
-  static const Color card = Color(0xFF0C111A);
-  static const Color glass = Color(0xA30E1520);
-  static const Color green = Color(0xFF44F0A6);
-  static const Color cyan = Color(0xFF45D4FF);
+  static const Color bg = Color(0xFF030408);
+  static const Color bgAlt = Color(0xFF060912);
+  static const Color card = Color(0xFF0C121D);
+  static const Color glass = Color(0xD60E1624);
+  static const Color green = Color(0xFF4CFFB6);
+  static const Color cyan = Color(0xFF45DFFF);
   static const Color orange = Color(0xFFFFB34D);
   static const Color text = Color(0xFFFFFFFF);
-  static const Color muted = Color(0xFFB9C8C1);
-  static const Color mutedAlt = Color(0xFF8F9B97);
+  static const Color muted = Color(0xFF9BABBA);
+  static const Color mutedAlt = Color(0xFF6B7B8F);
 
   static ThemeData get darkTheme {
     return ThemeData(
       useMaterial3: true,
       scaffoldBackgroundColor: bg,
-      fontFamily: 'SF Pro Display',
       brightness: Brightness.dark,
+      fontFamily: GoogleFonts.inter().fontFamily,
       splashFactory: InkSparkle.splashFactory,
-      colorScheme: ColorScheme.fromSeed(
-        seedColor: green,
-        brightness: Brightness.dark,
-        surface: card,
-        background: bg,
-      ).copyWith(
-        primary: green,
-        secondary: cyan,
-        tertiary: orange,
-        outline: Colors.white.withOpacity(0.08),
-      ),
+      colorScheme:
+          ColorScheme.fromSeed(
+            seedColor: green,
+            brightness: Brightness.dark,
+            surface: card,
+          ).copyWith(
+            primary: green,
+            secondary: cyan,
+            tertiary: orange,
+            outline: Colors.white.withOpacity(0.06),
+          ),
       dividerTheme: DividerThemeData(
-        color: Colors.white.withOpacity(0.10),
-        thickness: 1,
+        color: Colors.white.withOpacity(0.08),
+        thickness: 0.8,
       ),
       appBarTheme: const AppBarTheme(
         backgroundColor: Colors.transparent,
@@ -43,72 +44,79 @@ class AppTheme {
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: Colors.white.withOpacity(0.06),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
-        hintStyle: TextStyle(
-          color: mutedAlt.withOpacity(0.90),
-          fontSize: 13.5,
+        fillColor: Colors.white.withOpacity(0.04),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 20,
+          vertical: 16,
+        ),
+        hintStyle: GoogleFonts.inter(
+          color: mutedAlt,
+          fontSize: 14,
           fontWeight: FontWeight.w500,
         ),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(22),
+          borderRadius: BorderRadius.circular(24),
           borderSide: BorderSide(color: Colors.white.withOpacity(0.08)),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(22),
+          borderRadius: BorderRadius.circular(24),
           borderSide: BorderSide(color: Colors.white.withOpacity(0.08)),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(22),
+          borderRadius: BorderRadius.circular(24),
           borderSide: const BorderSide(color: green, width: 1.2),
         ),
       ),
-      textTheme: const TextTheme(
-        displayLarge: TextStyle(
+      textTheme: TextTheme(
+        displayLarge: GoogleFonts.plusJakartaSans(
           color: text,
-          fontSize: 38,
-          fontWeight: FontWeight.w900,
-          letterSpacing: -1.7,
-          height: 1.0,
-        ),
-        displayMedium: TextStyle(
-          color: text,
-          fontSize: 31,
-          fontWeight: FontWeight.w900,
+          fontSize: 34,
+          fontWeight: FontWeight.w800,
           letterSpacing: -1.2,
-          height: 1.05,
+          height: 1.1,
         ),
-        headlineMedium: TextStyle(
+        displayMedium: GoogleFonts.plusJakartaSans(
           color: text,
-          fontSize: 25,
-          fontWeight: FontWeight.w900,
-          letterSpacing: -1.0,
-          height: 1.04,
+          fontSize: 28,
+          fontWeight: FontWeight.w800,
+          letterSpacing: -0.8,
+          height: 1.15,
         ),
-        titleLarge: TextStyle(
+        headlineMedium: GoogleFonts.plusJakartaSans(
           color: text,
-          fontSize: 19,
-          fontWeight: FontWeight.w900,
-          letterSpacing: -0.7,
-          height: 1.06,
+          fontSize: 22,
+          fontWeight: FontWeight.w800,
+          letterSpacing: -0.4,
+          height: 1.2,
         ),
-        titleMedium: TextStyle(
+        titleLarge: GoogleFonts.plusJakartaSans(
+          color: text,
+          fontSize: 18,
+          fontWeight: FontWeight.w700,
+          letterSpacing: -0.2,
+        ),
+        titleMedium: GoogleFonts.inter(
           color: text,
           fontSize: 16,
-          fontWeight: FontWeight.w800,
-          letterSpacing: -0.35,
+          fontWeight: FontWeight.w600,
         ),
-        bodyLarge: TextStyle(
-          color: muted,
+        bodyLarge: GoogleFonts.inter(
+          color: text,
           fontSize: 15,
-          fontWeight: FontWeight.w500,
-          height: 1.45,
+          fontWeight: FontWeight.w400,
+          height: 1.5,
         ),
-        bodyMedium: TextStyle(
-          color: muted,
-          fontSize: 13.5,
-          fontWeight: FontWeight.w500,
-          height: 1.45,
+        bodyMedium: GoogleFonts.inter(
+          color: text,
+          fontSize: 14,
+          fontWeight: FontWeight.w400,
+          height: 1.5,
+        ),
+        labelLarge: GoogleFonts.inter(
+          color: text,
+          fontSize: 13,
+          fontWeight: FontWeight.w600,
+          letterSpacing: 0.2,
         ),
       ),
     );

@@ -10,13 +10,11 @@ import 'shared_widgets.dart';
 class AiDeliveryTrackingScreen extends StatefulWidget {
   final FoodItem food;
 
-  const AiDeliveryTrackingScreen({
-    super.key,
-    required this.food,
-  });
+  const AiDeliveryTrackingScreen({super.key, required this.food});
 
   @override
-  State<AiDeliveryTrackingScreen> createState() => _AiDeliveryTrackingScreenState();
+  State<AiDeliveryTrackingScreen> createState() =>
+      _AiDeliveryTrackingScreenState();
 }
 
 class _AiDeliveryTrackingScreenState extends State<AiDeliveryTrackingScreen>
@@ -25,12 +23,9 @@ class _AiDeliveryTrackingScreenState extends State<AiDeliveryTrackingScreen>
   double _smoothedAngle = 0;
 
   final List<Offset> routePoints = const [
-    Offset(0.16, 0.24),
-    Offset(0.27, 0.36),
-    Offset(0.42, 0.40),
-    Offset(0.55, 0.53),
-    Offset(0.67, 0.60),
-    Offset(0.79, 0.74),
+    Offset(0.2, 0.2),
+    Offset(0.5, 0.35),
+    Offset(0.8, 0.6),
   ];
 
   @override
@@ -51,7 +46,8 @@ class _AiDeliveryTrackingScreenState extends State<AiDeliveryTrackingScreen>
   bool get isSearching => _controller.value < 0.18;
   bool get isAccepted => _controller.value >= 0.18 && _controller.value < 0.34;
   bool get isPreparing => _controller.value >= 0.34 && _controller.value < 0.50;
-  bool get isRiderAssigned => _controller.value >= 0.50 && _controller.value < 0.64;
+  bool get isRiderAssigned =>
+      _controller.value >= 0.50 && _controller.value < 0.64;
   bool get isMoving => _controller.value >= 0.64 && _controller.value < 0.94;
   bool get isDelivered => _controller.value >= 0.94;
 
@@ -121,17 +117,9 @@ class _AiDeliveryTrackingScreenState extends State<AiDeliveryTrackingScreen>
     for (var i = 1; i < points.length; i++) {
       final previous = points[i - 1];
       final current = points[i];
-      final control = Offset(
-        (previous.dx + current.dx) / 2,
-        min(previous.dy, current.dy) - 56,
-      );
+      final midX = (previous.dx + current.dx) / 2;
 
-      path.quadraticBezierTo(
-        control.dx,
-        control.dy,
-        current.dx,
-        current.dy,
-      );
+      path.cubicTo(midX, previous.dy, midX, current.dy, current.dx, current.dy);
     }
 
     return path;
@@ -175,7 +163,7 @@ class _AiDeliveryTrackingScreenState extends State<AiDeliveryTrackingScreen>
             builder: (context, _) {
               final tangent = _routeTangent(size);
               final scooterPosition = tangent.position;
-              final scooterAngle = _smoothAngle(tangent.angle);
+              final scooterAngle = tangent.angle;
 
               return Stack(
                 children: [
@@ -313,17 +301,9 @@ class _DeliveryMapPainter extends CustomPainter {
     for (var i = 1; i < points.length; i++) {
       final previous = points[i - 1];
       final current = points[i];
-      final control = Offset(
-        (previous.dx + current.dx) / 2,
-        min(previous.dy, current.dy) - 56,
-      );
+      final midX = (previous.dx + current.dx) / 2;
 
-      path.quadraticBezierTo(
-        control.dx,
-        control.dy,
-        current.dx,
-        current.dy,
-      );
+      path.cubicTo(midX, previous.dy, midX, current.dy, current.dx, current.dy);
     }
 
     return path;
@@ -351,18 +331,30 @@ class _DeliveryMapPainter extends CustomPainter {
       Offset(size.width * 0.82, size.height * 0.14),
       280,
       Paint()
-        ..shader = RadialGradient(
-          colors: [AppTheme.green.withOpacity(0.16), Colors.transparent],
-        ).createShader(Rect.fromCircle(center: Offset(size.width * 0.82, size.height * 0.14), radius: 280)),
+        ..shader =
+            RadialGradient(
+              colors: [AppTheme.green.withOpacity(0.16), Colors.transparent],
+            ).createShader(
+              Rect.fromCircle(
+                center: Offset(size.width * 0.82, size.height * 0.14),
+                radius: 280,
+              ),
+            ),
     );
 
     canvas.drawCircle(
       Offset(size.width * 0.18, size.height * 0.32),
       250,
       Paint()
-        ..shader = RadialGradient(
-          colors: [AppTheme.orange.withOpacity(0.12), Colors.transparent],
-        ).createShader(Rect.fromCircle(center: Offset(size.width * 0.18, size.height * 0.32), radius: 250)),
+        ..shader =
+            RadialGradient(
+              colors: [AppTheme.orange.withOpacity(0.12), Colors.transparent],
+            ).createShader(
+              Rect.fromCircle(
+                center: Offset(size.width * 0.18, size.height * 0.32),
+                radius: 250,
+              ),
+            ),
     );
   }
 
@@ -449,9 +441,21 @@ class _DeliveryMapPainter extends CustomPainter {
   }
 
   void _drawLabels(Canvas canvas, Size size) {
-    _drawLabel(canvas, 'North Ridge', Offset(size.width * 0.18, size.height * 0.21));
-    _drawLabel(canvas, 'Food District', Offset(size.width * 0.57, size.height * 0.39));
-    _drawLabel(canvas, 'Central Loop', Offset(size.width * 0.34, size.height * 0.70));
+    _drawLabel(
+      canvas,
+      'North Ridge',
+      Offset(size.width * 0.18, size.height * 0.21),
+    );
+    _drawLabel(
+      canvas,
+      'Food District',
+      Offset(size.width * 0.57, size.height * 0.39),
+    );
+    _drawLabel(
+      canvas,
+      'Central Loop',
+      Offset(size.width * 0.34, size.height * 0.70),
+    );
   }
 
   void _drawLabel(Canvas canvas, String text, Offset offset) {
@@ -741,7 +745,11 @@ class _AiSearchOrbState extends State<_AiSearchOrb>
             width: 220,
             height: 220,
             child: Center(
-              child: Icon(Icons.auto_awesome_rounded, color: AppTheme.bg, size: 36),
+              child: Icon(
+                Icons.auto_awesome_rounded,
+                color: AppTheme.bg,
+                size: 36,
+              ),
             ),
           ),
         );
@@ -859,9 +867,7 @@ class _ScooterMarker extends StatelessWidget {
           ),
         ],
       ),
-      child: CustomPaint(
-        painter: _ScooterPainter(),
-      ),
+      child: CustomPaint(painter: _ScooterPainter()),
     );
   }
 }
@@ -889,7 +895,11 @@ class _ScooterPainter extends CustomPainter {
 
     canvas.drawRRect(
       RRect.fromRectAndRadius(
-        Rect.fromCenter(center: Offset(center.dx + 3, center.dy), width: 42, height: 24),
+        Rect.fromCenter(
+          center: Offset(center.dx + 3, center.dy),
+          width: 42,
+          height: 24,
+        ),
         const Radius.circular(14),
       ),
       bodyPaint,
@@ -942,34 +952,6 @@ class _DeliveryBottomSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final steps = [
-      _TimelineEntry(
-        title: 'Order confirmed',
-        subtitle: 'Restaurant accepted the order',
-        icon: Icons.check_circle_rounded,
-      ),
-      _TimelineEntry(
-        title: 'Preparing',
-        subtitle: 'Chef is preparing your meal fresh',
-        icon: Icons.kitchen_rounded,
-      ),
-      _TimelineEntry(
-        title: 'Picked up',
-        subtitle: 'Rider collected the package',
-        icon: Icons.local_shipping_rounded,
-      ),
-      _TimelineEntry(
-        title: 'En route',
-        subtitle: 'The route is being tracked live',
-        icon: Icons.route_rounded,
-      ),
-      _TimelineEntry(
-        title: 'Delivered',
-        subtitle: 'Order handed over successfully',
-        icon: Icons.celebration_rounded,
-      ),
-    ];
-
     return GlassCard(
       padding: const EdgeInsets.all(16),
       borderRadius: BorderRadius.circular(32),
@@ -983,79 +965,54 @@ class _DeliveryBottomSheet extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      isDelivered ? 'Delivered successfully' : '$etaMinutes min away',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 18,
-                        fontWeight: FontWeight.w900,
-                        letterSpacing: -0.4,
-                      ),
+                      isDelivered ? 'Arrived!' : 'Out for delivery',
+                      style: Theme.of(context).textTheme.titleLarge,
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      isDelivered ? 'Enjoy your meal.' : '${food.restaurant} · live route tracking',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                      isDelivered
+                          ? 'Enjoy your fresh meal'
+                          : '${food.restaurant} · Est. $etaMinutes mins',
                       style: const TextStyle(
                         color: AppTheme.muted,
                         fontSize: 12.5,
-                        fontWeight: FontWeight.w500,
                       ),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(width: 12),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.08),
-                  borderRadius: BorderRadius.circular(18),
-                  border: Border.all(color: Colors.white.withOpacity(0.08)),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
                 ),
-                child: Row(
-                  children: [
-                    const Icon(Icons.timer_rounded, color: AppTheme.green, size: 16),
-                    const SizedBox(width: 6),
-                    AnimatedSwitcher(
-                      duration: const Duration(milliseconds: 260),
-                      child: Text(
-                        isDelivered ? 'Now' : '$etaMinutes min',
-                        key: ValueKey(etaMinutes),
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 12.5,
-                          fontWeight: FontWeight.w900,
-                        ),
-                      ),
-                    ),
-                  ],
+                decoration: BoxDecoration(
+                  color: AppTheme.green.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  isDelivered ? 'Done' : '$etaMinutes min',
+                  style: const TextStyle(
+                    color: AppTheme.green,
+                    fontWeight: FontWeight.w900,
+                  ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 20),
           PremiumSurface(
-            padding: const EdgeInsets.all(14),
+            padding: const EdgeInsets.all(12),
             borderRadius: BorderRadius.circular(24),
             child: Row(
               children: [
-                Container(
-                  width: 48,
-                  height: 48,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient: LinearGradient(
-                      colors: isDelivered
-                          ? const [AppTheme.green, Color(0xFFB5FFE0)]
-                          : const [AppTheme.orange, AppTheme.green],
-                    ),
-                  ),
-                  child: Icon(
-                    isDelivered ? Icons.check_rounded : Icons.person_rounded,
-                    color: AppTheme.bg,
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(16),
+                  child: Image.network(
+                    'https://images.unsplash.com/photo-1599566150163-29194dcaad36?q=80&w=2574&auto=format&fit=crop',
+                    width: 44,
+                    height: 44,
+                    fit: BoxFit.cover,
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -1064,148 +1021,75 @@ class _DeliveryBottomSheet extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Rider: Hamza',
+                        'Hamza (Rider)',
                         style: TextStyle(
                           color: Colors.white,
-                          fontSize: 14.5,
-                          fontWeight: FontWeight.w900,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
                         ),
                       ),
-                      SizedBox(height: 4),
                       Text(
-                        '4.9 rating · 1,200+ deliveries · scooter',
-                        style: TextStyle(
-                          color: AppTheme.muted,
-                          fontSize: 12,
-                          height: 1.3,
-                        ),
+                        '4.9 rating · Pro rider',
+                        style: TextStyle(color: AppTheme.muted, fontSize: 11),
                       ),
                     ],
                   ),
                 ),
-                const SizedBox(width: 10),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  width: 40,
+                  height: 40,
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.08),
-                    borderRadius: BorderRadius.circular(999),
-                    border: Border.all(color: Colors.white.withOpacity(0.08)),
+                    shape: BoxShape.circle,
+                    color: Colors.white.withOpacity(0.06),
                   ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: const [
-                      Icon(Icons.call_rounded, color: AppTheme.green, size: 16),
-                      SizedBox(width: 6),
-                      Text(
-                        'Call',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w800,
-                        ),
-                      ),
-                    ],
+                  child: const Icon(
+                    Icons.call_rounded,
+                    color: AppTheme.green,
+                    size: 18,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: Colors.white.withOpacity(0.06),
+                  ),
+                  child: const Icon(
+                    Icons.chat_bubble_rounded,
+                    color: AppTheme.cyan,
+                    size: 18,
                   ),
                 ),
               ],
             ),
           ),
-          const SizedBox(height: 14),
-          Expanded(
-            child: SingleChildScrollView(
-              physics: const BouncingScrollPhysics(),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Order timeline',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 15.5,
-                      fontWeight: FontWeight.w900,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  ...List.generate(steps.length, (index) {
-                    final step = steps[index];
-                    final completed = index < activeStep;
-                    final active = index == activeStep;
-
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 12),
-                      child: TimelineStepCard(
-                        title: step.title,
-                        subtitle: step.subtitle,
-                        icon: step.icon,
-                        active: active,
-                        completed: completed,
-                      ),
-                    );
-                  }),
-                  const SizedBox(height: 2),
-                  AnimatedSwitcher(
-                    duration: const Duration(milliseconds: 260),
-                    child: isDelivered
-                        ? GlassCard(
-                            key: const ValueKey('delivered'),
-                            padding: const EdgeInsets.all(16),
-                            borderRadius: BorderRadius.circular(24),
-                            child: Row(
-                              children: [
-                                Container(
-                                  width: 44,
-                                  height: 44,
-                                  decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    gradient: const LinearGradient(
-                                      colors: [AppTheme.green, Color(0xFFA6FFD9)],
-                                    ),
-                                  ),
-                                  child: const Icon(Icons.celebration_rounded, color: AppTheme.bg),
-                                ),
-                                const SizedBox(width: 12),
-                                const Expanded(
-                                  child: Text(
-                                    'Delivery completed with a premium success state and a clear next action for the portfolio showcase.',
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 12.8,
-                                      height: 1.4,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          )
-                        : GlassCard(
-                            key: const ValueKey('moving'),
-                            padding: const EdgeInsets.all(14),
-                            borderRadius: BorderRadius.circular(24),
-                            child: Row(
-                              children: [
-                                const Icon(Icons.route_rounded, color: AppTheme.orange),
-                                const SizedBox(width: 10),
-                                Expanded(
-                                  child: Text(
-                                    isMoving
-                                        ? 'Route is active and the scooter is moving smoothly.'
-                                        : 'Waiting for the rider handoff to complete.',
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 12.8,
-                                      height: 1.4,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                  ),
-                ],
+          const SizedBox(height: 24),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              _StepIndicator(
+                label: 'Order',
+                icon: Icons.check_circle_rounded,
+                active: activeStep >= 1,
               ),
-            ),
+              _StepIndicator(
+                label: 'Prep',
+                icon: Icons.soup_kitchen_rounded,
+                active: activeStep >= 2,
+              ),
+              _StepIndicator(
+                label: 'Rider',
+                icon: Icons.delivery_dining_rounded,
+                active: activeStep >= 3,
+              ),
+              _StepIndicator(
+                label: 'Home',
+                icon: Icons.home_rounded,
+                active: activeStep >= 5,
+              ),
+            ],
           ),
         ],
       ),
@@ -1213,14 +1097,42 @@ class _DeliveryBottomSheet extends StatelessWidget {
   }
 }
 
-class _TimelineEntry {
-  final String title;
-  final String subtitle;
+class _StepIndicator extends StatelessWidget {
+  final String label;
   final IconData icon;
+  final bool active;
 
-  const _TimelineEntry({
-    required this.title,
-    required this.subtitle,
+  const _StepIndicator({
+    required this.label,
     required this.icon,
+    required this.active,
   });
+
+  @override
+  Widget build(BuildContext context) {
+    final color = active ? AppTheme.green : Colors.white.withOpacity(0.08);
+    return Column(
+      children: [
+        Container(
+          width: 48,
+          height: 48,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: color.withOpacity(0.1),
+            border: Border.all(color: color.withOpacity(0.3)),
+          ),
+          child: Icon(icon, color: color, size: 22),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          label,
+          style: TextStyle(
+            color: active ? Colors.white : AppTheme.muted,
+            fontSize: 11,
+            fontWeight: active ? FontWeight.bold : FontWeight.normal,
+          ),
+        ),
+      ],
+    );
+  }
 }

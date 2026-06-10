@@ -203,10 +203,7 @@ class PremiumSectionHeader extends StatelessWidget {
         ),
         if (actionLabel != null) ...[
           const SizedBox(width: 12),
-          TextButton(
-            onPressed: onAction,
-            child: Text(actionLabel!),
-          ),
+          TextButton(onPressed: onAction, child: Text(actionLabel!)),
         ],
       ],
     );
@@ -249,11 +246,7 @@ class CategoryPill extends StatelessWidget {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(
-                icon,
-                size: 16,
-                color: selected ? AppTheme.bg : accentColor,
-              ),
+              Icon(icon, size: 16, color: selected ? AppTheme.bg : accentColor),
               const SizedBox(width: 8),
               Text(
                 label,
@@ -275,11 +268,7 @@ class PremiumSearchBar extends StatelessWidget {
   final String hintText;
   final VoidCallback? onTap;
 
-  const PremiumSearchBar({
-    super.key,
-    required this.hintText,
-    this.onTap,
-  });
+  const PremiumSearchBar({super.key, required this.hintText, this.onTap});
 
   @override
   Widget build(BuildContext context) {
