@@ -3,8 +3,16 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 
+import 'app_theme.dart';
+import 'food_item.dart';
+
 class AiDeliveryTrackingScreen extends StatefulWidget {
-  const AiDeliveryTrackingScreen({super.key});
+  final FoodItem food;
+
+  const AiDeliveryTrackingScreen({
+    super.key,
+    required this.food,
+  });
 
   @override
   State<AiDeliveryTrackingScreen> createState() =>
@@ -16,12 +24,12 @@ class _AiDeliveryTrackingScreenState extends State<AiDeliveryTrackingScreen>
   late final AnimationController _controller;
 
   final List<Offset> routePoints = const [
-    Offset(0.18, 0.28), // Restaurant
-    Offset(0.28, 0.40),
-    Offset(0.44, 0.43),
-    Offset(0.54, 0.55),
-    Offset(0.66, 0.62),
-    Offset(0.78, 0.76), // Home
+    Offset(0.18, 0.28),
+    Offset(0.30, 0.41),
+    Offset(0.45, 0.43),
+    Offset(0.55, 0.56),
+    Offset(0.67, 0.62),
+    Offset(0.80, 0.76),
   ];
 
   @override
@@ -40,58 +48,65 @@ class _AiDeliveryTrackingScreenState extends State<AiDeliveryTrackingScreen>
     super.dispose();
   }
 
-  bool get _isSearching => _controller.value < 0.20;
-  bool get _isAccepted => _controller.value >= 0.20 && _controller.value < 0.34;
-  bool get _isPreparing => _controller.value >= 0.34 && _controller.value < 0.48;
-  bool get _isRiderAssigned =>
+  bool get isSearching => _controller.value < 0.20;
+  bool get isAccepted => _controller.value >= 0.20 && _controller.value < 0.34;
+  bool get isPreparing => _controller.value >= 0.34 && _controller.value < 0.48;
+  bool get isRiderAssigned =>
       _controller.value >= 0.48 && _controller.value < 0.62;
-  bool get _isMoving => _controller.value >= 0.62 && _controller.value < 0.94;
-  bool get _isDelivered => _controller.value >= 0.94;
+  bool get isMoving => _controller.value >= 0.62 && _controller.value < 0.94;
+  bool get isDelivered => _controller.value >= 0.94;
 
-  double get _routeProgress {
+  double get routeProgress {
     if (_controller.value < 0.62) return 0;
     if (_controller.value >= 0.94) return 1;
 
     return ((_controller.value - 0.62) / 0.32).clamp(0.0, 1.0);
   }
 
-  int get _etaMinutes {
-    if (_isDelivered) return 0;
-
-    final eta = 8 - (_routeProgress * 8);
+  int get etaMinutes {
+    if (isDelivered) return 0;
+    final eta = 8 - (routeProgress * 8);
     return eta.ceil().clamp(1, 8);
   }
 
-  String get _statusTitle {
-    if (_isSearching) return "AI finding best restaurant";
-    if (_isAccepted) return "Order accepted";
-    if (_isPreparing) return "Preparing your meal";
-    if (_isRiderAssigned) return "Rider assigned";
-    if (_isDelivered) return "Order delivered";
-    return "Rider is on the way";
+  int get activeStep {
+    if (isSearching) return 0;
+    if (isAccepted) return 1;
+    if (isPreparing) return 2;
+    if (isRiderAssigned || isMoving) return 3;
+    return 4;
   }
 
-  String get _statusSubtitle {
-    if (_isSearching) return "Scanning nearby restaurants and fastest routes...";
-    if (_isAccepted) return "Burger House confirmed your order";
-    if (_isPreparing) return "Your food is being prepared fresh";
-    if (_isRiderAssigned) return "Hamza is picking up your order";
-    if (_isDelivered) return "Enjoy your meal. Bon appétit!";
-    return "$_etaMinutes min away · Live delivery tracking";
+  String get title {
+    if (isSearching) return 'AI finding best rider';
+    if (isAccepted) return 'Order accepted';
+    if (isPreparing) return 'Preparing your meal';
+    if (isRiderAssigned) return 'Rider assigned';
+    if (isDelivered) return 'Order delivered';
+    return 'Rider is on the way';
   }
 
-  String get _statusBadge {
-    if (_isSearching) return "AI";
-    if (_isAccepted) return "Accepted";
-    if (_isPreparing) return "Cooking";
-    if (_isRiderAssigned) return "Picked";
-    if (_isDelivered) return "Done";
-    return "$_etaMinutes min";
+  String get subtitle {
+    if (isSearching) return 'Scanning nearby riders and fastest routes...';
+    if (isAccepted) return '${widget.food.restaurant} confirmed your order';
+    if (isPreparing) return 'Your food is being prepared fresh';
+    if (isRiderAssigned) return 'Hamza is picking up your order';
+    if (isDelivered) return 'Enjoy your meal. Bon appétit!';
+    return '$etaMinutes min away · Live delivery tracking';
+  }
+
+  String get badge {
+    if (isSearching) return 'AI';
+    if (isAccepted) return 'Accepted';
+    if (isPreparing) return 'Cooking';
+    if (isRiderAssigned) return 'Picked';
+    if (isDelivered) return 'Done';
+    return '$etaMinutes min';
   }
 
   Path _buildRoutePath(Size size) {
     final points = routePoints
-        .map((point) => Offset(point.dx * size.width, point.dy * size.height))
+        .map((p) => Offset(p.dx * size.width, p.dy * size.height))
         .toList();
 
     final path = Path()..moveTo(points.first.dx, points.first.dy);
@@ -100,14 +115,14 @@ class _AiDeliveryTrackingScreenState extends State<AiDeliveryTrackingScreen>
       final previous = points[i - 1];
       final current = points[i];
 
-      final controlPoint = Offset(
+      final control = Offset(
         (previous.dx + current.dx) / 2,
         min(previous.dy, current.dy) - 48,
       );
 
       path.quadraticBezierTo(
-        controlPoint.dx,
-        controlPoint.dy,
+        control.dx,
+        control.dy,
         current.dx,
         current.dy,
       );
@@ -116,17 +131,18 @@ class _AiDeliveryTrackingScreenState extends State<AiDeliveryTrackingScreen>
     return path;
   }
 
-  Tangent _getScooterTangent(Size size, double progress) {
+  Tangent _getScooterTangent(Size size) {
     final path = _buildRoutePath(size);
     final metric = path.computeMetrics().first;
 
-    return metric.getTangentForOffset(metric.length * progress)!;
+    return metric.getTangentForOffset(metric.length * routeProgress)!;
   }
 
   @override
   Widget build(BuildContext context) {
+    final food = widget.food;
+
     return Scaffold(
-      backgroundColor: const Color(0xFF070B10),
       body: LayoutBuilder(
         builder: (context, constraints) {
           final size = Size(constraints.maxWidth, constraints.maxHeight);
@@ -134,7 +150,7 @@ class _AiDeliveryTrackingScreenState extends State<AiDeliveryTrackingScreen>
           return AnimatedBuilder(
             animation: _controller,
             builder: (context, _) {
-              final tangent = _getScooterTangent(size, _routeProgress);
+              final tangent = _getScooterTangent(size);
               final scooterPosition = tangent.position;
               final scooterAngle = tangent.angle;
 
@@ -142,11 +158,11 @@ class _AiDeliveryTrackingScreenState extends State<AiDeliveryTrackingScreen>
                 children: [
                   Positioned.fill(
                     child: CustomPaint(
-                      painter: DeliveryMapPainter(
+                      painter: _DeliveryMapPainter(
                         routePoints: routePoints,
-                        routeProgress: _routeProgress,
+                        routeProgress: routeProgress,
                         aiPulseProgress: _controller.value,
-                        showRoute: !_isSearching,
+                        showRoute: !isSearching,
                       ),
                     ),
                   ),
@@ -167,56 +183,56 @@ class _AiDeliveryTrackingScreenState extends State<AiDeliveryTrackingScreen>
                     ),
                   ),
 
-                  Positioned(
-                    top: 58,
-                    left: 20,
-                    right: 20,
-                    child: DeliveryStatusCard(
-                      title: _statusTitle,
-                      subtitle: _statusSubtitle,
-                      badge: _statusBadge,
-                      isSearching: _isSearching,
-                      isDelivered: _isDelivered,
+                  SafeArea(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+                      child: _TrackingTopCard(
+                        title: title,
+                        subtitle: subtitle,
+                        badge: badge,
+                        isSearching: isSearching,
+                        isDelivered: isDelivered,
+                      ),
                     ),
                   ),
 
-                  if (_isSearching)
+                  if (isSearching)
                     Positioned(
-                      top: size.height * 0.28,
+                      top: size.height * 0.30,
                       left: 0,
                       right: 0,
                       child: const Center(
-                        child: AiSearchOrb(),
+                        child: _AiSearchOrb(),
                       ),
                     ),
 
                   Positioned(
                     left: size.width * routePoints.first.dx - 22,
                     top: size.height * routePoints.first.dy - 22,
-                    child: const MapMarker(
+                    child: const _MapMarker(
                       icon: Icons.restaurant_rounded,
-                      label: "Burger House",
-                      color: Color(0xFFFFB84D),
+                      label: 'Restaurant',
+                      color: AppTheme.orange,
                     ),
                   ),
 
                   Positioned(
                     left: size.width * routePoints.last.dx - 22,
                     top: size.height * routePoints.last.dy - 22,
-                    child: const MapMarker(
+                    child: const _MapMarker(
                       icon: Icons.home_rounded,
-                      label: "Your location",
-                      color: Color(0xFF4DFFB5),
+                      label: 'Your location',
+                      color: AppTheme.green,
                     ),
                   ),
 
-                  if (!_isSearching && !_isAccepted && !_isPreparing)
+                  if (!isSearching && !isAccepted && !isPreparing)
                     Positioned(
                       left: scooterPosition.dx - 34,
                       top: scooterPosition.dy - 34,
                       child: Transform.rotate(
                         angle: scooterAngle,
-                        child: const ScooterMarker(),
+                        child: const _ScooterMarker(),
                       ),
                     ),
 
@@ -224,10 +240,11 @@ class _AiDeliveryTrackingScreenState extends State<AiDeliveryTrackingScreen>
                     left: 20,
                     right: 20,
                     bottom: 24,
-                    child: DeliveryBottomSheet(
-                      activeStep: _activeStep,
-                      isDelivered: _isDelivered,
-                      etaMinutes: _etaMinutes,
+                    child: _DeliveryBottomSheet(
+                      food: food,
+                      activeStep: activeStep,
+                      isDelivered: isDelivered,
+                      etaMinutes: etaMinutes,
                     ),
                   ),
                 ],
@@ -238,23 +255,15 @@ class _AiDeliveryTrackingScreenState extends State<AiDeliveryTrackingScreen>
       ),
     );
   }
-
-  int get _activeStep {
-    if (_isSearching) return 0;
-    if (_isAccepted) return 1;
-    if (_isPreparing) return 2;
-    if (_isRiderAssigned || _isMoving) return 3;
-    return 4;
-  }
 }
 
-class DeliveryMapPainter extends CustomPainter {
+class _DeliveryMapPainter extends CustomPainter {
   final List<Offset> routePoints;
   final double routeProgress;
   final double aiPulseProgress;
   final bool showRoute;
 
-  DeliveryMapPainter({
+  _DeliveryMapPainter({
     required this.routePoints,
     required this.routeProgress,
     required this.aiPulseProgress,
@@ -264,23 +273,20 @@ class DeliveryMapPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     _drawBackground(canvas, size);
-    _drawSoftGlows(canvas, size);
-    _drawCityBlocks(canvas, size);
     _drawRoads(canvas, size);
-    _drawGridDots(canvas, size);
+    _drawBlocks(canvas, size);
+    _drawDots(canvas, size);
 
     if (showRoute) {
       _drawRoute(canvas, size);
-    }
-
-    if (!showRoute) {
+    } else {
       _drawAiScan(canvas, size);
     }
   }
 
   Path _buildRoutePath(Size size) {
     final points = routePoints
-        .map((point) => Offset(point.dx * size.width, point.dy * size.height))
+        .map((p) => Offset(p.dx * size.width, p.dy * size.height))
         .toList();
 
     final path = Path()..moveTo(points.first.dx, points.first.dy);
@@ -289,14 +295,14 @@ class DeliveryMapPainter extends CustomPainter {
       final previous = points[i - 1];
       final current = points[i];
 
-      final controlPoint = Offset(
+      final control = Offset(
         (previous.dx + current.dx) / 2,
         min(previous.dy, current.dy) - 48,
       );
 
       path.quadraticBezierTo(
-        controlPoint.dx,
-        controlPoint.dy,
+        control.dx,
+        control.dy,
         current.dx,
         current.dy,
       );
@@ -308,98 +314,63 @@ class DeliveryMapPainter extends CustomPainter {
   void _drawBackground(Canvas canvas, Size size) {
     final rect = Offset.zero & size;
 
-    final paint = Paint()
-      ..shader = const LinearGradient(
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
-        colors: [
-          Color(0xFF070B10),
-          Color(0xFF0A1715),
-          Color(0xFF101219),
-        ],
-      ).createShader(rect);
-
-    canvas.drawRect(rect, paint);
-  }
-
-  void _drawSoftGlows(Canvas canvas, Size size) {
-    final greenGlow = Paint()
-      ..shader = RadialGradient(
-        colors: [
-          const Color(0xFF4DFFB5).withOpacity(0.20),
-          Colors.transparent,
-        ],
-      ).createShader(
-        Rect.fromCircle(
-          center: Offset(size.width * 0.78, size.height * 0.14),
-          radius: 280,
-        ),
-      );
-
-    final orangeGlow = Paint()
-      ..shader = RadialGradient(
-        colors: [
-          const Color(0xFFFFB84D).withOpacity(0.13),
-          Colors.transparent,
-        ],
-      ).createShader(
-        Rect.fromCircle(
-          center: Offset(size.width * 0.18, size.height * 0.32),
-          radius: 230,
-        ),
-      );
+    canvas.drawRect(
+      rect,
+      Paint()
+        ..shader = const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            AppTheme.bg,
+            Color(0xFF0A1715),
+            Color(0xFF101219),
+          ],
+        ).createShader(rect),
+    );
 
     canvas.drawCircle(
       Offset(size.width * 0.78, size.height * 0.14),
       280,
-      greenGlow,
+      Paint()
+        ..shader = RadialGradient(
+          colors: [
+            AppTheme.green.withOpacity(0.20),
+            Colors.transparent,
+          ],
+        ).createShader(
+          Rect.fromCircle(
+            center: Offset(size.width * 0.78, size.height * 0.14),
+            radius: 280,
+          ),
+        ),
     );
 
     canvas.drawCircle(
       Offset(size.width * 0.18, size.height * 0.32),
       230,
-      orangeGlow,
+      Paint()
+        ..shader = RadialGradient(
+          colors: [
+            AppTheme.orange.withOpacity(0.13),
+            Colors.transparent,
+          ],
+        ).createShader(
+          Rect.fromCircle(
+            center: Offset(size.width * 0.18, size.height * 0.32),
+            radius: 230,
+          ),
+        ),
     );
   }
 
-  void _drawCityBlocks(Canvas canvas, Size size) {
-    final fillPaint = Paint()
-      ..color = Colors.white.withOpacity(0.035)
-      ..style = PaintingStyle.fill;
-
-    final borderPaint = Paint()
-      ..color = Colors.white.withOpacity(0.045)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1;
-
-    final blocks = [
-      Rect.fromLTWH(size.width * 0.07, size.height * 0.12, 88, 64),
-      Rect.fromLTWH(size.width * 0.47, size.height * 0.10, 132, 76),
-      Rect.fromLTWH(size.width * 0.18, size.height * 0.48, 116, 88),
-      Rect.fromLTWH(size.width * 0.60, size.height * 0.40, 108, 122),
-      Rect.fromLTWH(size.width * 0.10, size.height * 0.76, 124, 80),
-      Rect.fromLTWH(size.width * 0.58, size.height * 0.72, 128, 74),
-    ];
-
-    for (final rect in blocks) {
-      final rRect = RRect.fromRectAndRadius(
-        rect,
-        const Radius.circular(24),
-      );
-
-      canvas.drawRRect(rRect, fillPaint);
-      canvas.drawRRect(rRect, borderPaint);
-    }
-  }
-
   void _drawRoads(Canvas canvas, Size size) {
-    final roadPaint = Paint()
+    final road = Paint()
       ..color = Colors.white.withOpacity(0.075)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 30
       ..strokeCap = StrokeCap.round;
 
-    final innerRoadPaint = Paint()
+    final thinRoad = Paint()
       ..color = Colors.white.withOpacity(0.045)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 15
@@ -438,12 +409,42 @@ class DeliveryMapPainter extends CustomPainter {
         size.height * 0.84,
       );
 
-    canvas.drawPath(roadOne, roadPaint);
-    canvas.drawPath(roadTwo, innerRoadPaint);
-    canvas.drawPath(roadThree, roadPaint);
+    canvas.drawPath(roadOne, road);
+    canvas.drawPath(roadTwo, thinRoad);
+    canvas.drawPath(roadThree, road);
   }
 
-  void _drawGridDots(Canvas canvas, Size size) {
+  void _drawBlocks(Canvas canvas, Size size) {
+    final fill = Paint()
+      ..color = Colors.white.withOpacity(0.035)
+      ..style = PaintingStyle.fill;
+
+    final border = Paint()
+      ..color = Colors.white.withOpacity(0.045)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1;
+
+    final blocks = [
+      Rect.fromLTWH(size.width * 0.07, size.height * 0.12, 88, 64),
+      Rect.fromLTWH(size.width * 0.47, size.height * 0.10, 132, 76),
+      Rect.fromLTWH(size.width * 0.18, size.height * 0.48, 116, 88),
+      Rect.fromLTWH(size.width * 0.60, size.height * 0.40, 108, 122),
+      Rect.fromLTWH(size.width * 0.10, size.height * 0.76, 124, 80),
+      Rect.fromLTWH(size.width * 0.58, size.height * 0.72, 128, 74),
+    ];
+
+    for (final rect in blocks) {
+      final rRect = RRect.fromRectAndRadius(
+        rect,
+        const Radius.circular(24),
+      );
+
+      canvas.drawRRect(rRect, fill);
+      canvas.drawRRect(rRect, border);
+    }
+  }
+
+  void _drawDots(Canvas canvas, Size size) {
     final paint = Paint()..color = Colors.white.withOpacity(0.08);
 
     for (double x = 30; x < size.width; x += 42) {
@@ -460,19 +461,21 @@ class DeliveryMapPainter extends CustomPainter {
       final progress = (aiPulseProgress * 4 + i * 0.22) % 1;
       final radius = 44 + progress * 128;
 
-      final paint = Paint()
-        ..color = const Color(0xFF4DFFB5).withOpacity((1 - progress) * 0.16)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 2.2;
-
-      canvas.drawCircle(center, radius, paint);
+      canvas.drawCircle(
+        center,
+        radius,
+        Paint()
+          ..color = AppTheme.green.withOpacity((1 - progress) * 0.16)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 2.2,
+      );
     }
 
     final sweepPaint = Paint()
       ..shader = SweepGradient(
         colors: [
           Colors.transparent,
-          const Color(0xFF4DFFB5).withOpacity(0.26),
+          AppTheme.green.withOpacity(0.26),
           Colors.transparent,
         ],
         stops: const [0.0, 0.58, 1.0],
@@ -488,43 +491,47 @@ class DeliveryMapPainter extends CustomPainter {
     final path = _buildRoutePath(size);
     final metric = path.computeMetrics().first;
 
-    final glowPaint = Paint()
-      ..color = const Color(0xFF4DFFB5).withOpacity(0.24)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 22
-      ..strokeCap = StrokeCap.round
-      ..strokeJoin = StrokeJoin.round
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 20);
+    canvas.drawPath(
+      path,
+      Paint()
+        ..color = AppTheme.green.withOpacity(0.24)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 22
+        ..strokeCap = StrokeCap.round
+        ..strokeJoin = StrokeJoin.round
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 20),
+    );
 
-    final basePaint = Paint()
-      ..color = Colors.white.withOpacity(0.17)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 8
-      ..strokeCap = StrokeCap.round
-      ..strokeJoin = StrokeJoin.round;
-
-    final activePaint = Paint()
-      ..shader = const LinearGradient(
-        colors: [
-          Color(0xFFFFB84D),
-          Color(0xFF4DFFB5),
-          Color(0xFF45D5FF),
-        ],
-      ).createShader(Offset.zero & size)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 8
-      ..strokeCap = StrokeCap.round
-      ..strokeJoin = StrokeJoin.round;
-
-    canvas.drawPath(path, glowPaint);
-    canvas.drawPath(path, basePaint);
+    canvas.drawPath(
+      path,
+      Paint()
+        ..color = Colors.white.withOpacity(0.17)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 8
+        ..strokeCap = StrokeCap.round
+        ..strokeJoin = StrokeJoin.round,
+    );
 
     final activePath = metric.extractPath(
       0,
       metric.length * routeProgress,
     );
 
-    canvas.drawPath(activePath, activePaint);
+    canvas.drawPath(
+      activePath,
+      Paint()
+        ..shader = const LinearGradient(
+          colors: [
+            AppTheme.orange,
+            AppTheme.green,
+            AppTheme.cyan,
+          ],
+        ).createShader(Offset.zero & size)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 8
+        ..strokeCap = StrokeCap.round
+        ..strokeJoin = StrokeJoin.round,
+    );
 
     final dashPaint = Paint()
       ..color = Colors.white.withOpacity(0.66)
@@ -539,22 +546,21 @@ class DeliveryMapPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant DeliveryMapPainter oldDelegate) {
+  bool shouldRepaint(covariant _DeliveryMapPainter oldDelegate) {
     return oldDelegate.routeProgress != routeProgress ||
         oldDelegate.aiPulseProgress != aiPulseProgress ||
         oldDelegate.showRoute != showRoute;
   }
 }
 
-class DeliveryStatusCard extends StatelessWidget {
+class _TrackingTopCard extends StatelessWidget {
   final String title;
   final String subtitle;
   final String badge;
   final bool isSearching;
   final bool isDelivered;
 
-  const DeliveryStatusCard({
-    super.key,
+  const _TrackingTopCard({
     required this.title,
     required this.subtitle,
     required this.badge,
@@ -571,24 +577,16 @@ class DeliveryStatusCard extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.all(18),
           decoration: BoxDecoration(
-            color: const Color(0xFF07100F).withOpacity(0.72),
+            color: AppTheme.glass,
             borderRadius: BorderRadius.circular(30),
             border: Border.all(
               color: Colors.white.withOpacity(0.10),
             ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.28),
-                blurRadius: 28,
-                offset: const Offset(0, 16),
-              ),
-            ],
           ),
           child: Row(
             children: [
               AnimatedContainer(
                 duration: const Duration(milliseconds: 450),
-                curve: Curves.easeOut,
                 width: 52,
                 height: 52,
                 decoration: BoxDecoration(
@@ -596,20 +594,14 @@ class DeliveryStatusCard extends StatelessWidget {
                   gradient: LinearGradient(
                     colors: isDelivered
                         ? const [
-                            Color(0xFF4DFFB5),
+                            AppTheme.green,
                             Color(0xFFB6FFE2),
                           ]
                         : const [
-                            Color(0xFFFFB84D),
-                            Color(0xFF4DFFB5),
+                            AppTheme.orange,
+                            AppTheme.green,
                           ],
                   ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: const Color(0xFF4DFFB5).withOpacity(0.25),
-                      blurRadius: 22,
-                    ),
-                  ],
                 ),
                 child: Icon(
                   isSearching
@@ -617,7 +609,7 @@ class DeliveryStatusCard extends StatelessWidget {
                       : isDelivered
                           ? Icons.check_rounded
                           : Icons.delivery_dining_rounded,
-                  color: const Color(0xFF07100F),
+                  color: AppTheme.bg,
                   size: 27,
                 ),
               ),
@@ -626,59 +618,18 @@ class DeliveryStatusCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    AnimatedSwitcher(
-                      duration: const Duration(milliseconds: 450),
-                      transitionBuilder: (child, animation) {
-                        return FadeTransition(
-                          opacity: animation,
-                          child: SlideTransition(
-                            position: Tween<Offset>(
-                              begin: const Offset(0, 0.30),
-                              end: Offset.zero,
-                            ).animate(animation),
-                            child: child,
-                          ),
-                        );
-                      },
-                      child: Text(
-                        title,
-                        key: ValueKey(title),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 17.5,
-                          fontWeight: FontWeight.w900,
-                          letterSpacing: -0.4,
-                        ),
-                      ),
+                    _AnimatedText(
+                      text: title,
+                      fontSize: 17.5,
+                      color: Colors.white,
+                      fontWeight: FontWeight.w900,
                     ),
                     const SizedBox(height: 5),
-                    AnimatedSwitcher(
-                      duration: const Duration(milliseconds: 450),
-                      transitionBuilder: (child, animation) {
-                        return FadeTransition(
-                          opacity: animation,
-                          child: SlideTransition(
-                            position: Tween<Offset>(
-                              begin: const Offset(0, 0.30),
-                              end: Offset.zero,
-                            ).animate(animation),
-                            child: child,
-                          ),
-                        );
-                      },
-                      child: Text(
-                        subtitle,
-                        key: ValueKey(subtitle),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          color: Color(0xFFB9C8C1),
-                          fontSize: 12.5,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
+                    _AnimatedText(
+                      text: subtitle,
+                      fontSize: 12.5,
+                      color: AppTheme.muted,
+                      fontWeight: FontWeight.w500,
                     ),
                   ],
                 ),
@@ -686,12 +637,6 @@ class DeliveryStatusCard extends StatelessWidget {
               const SizedBox(width: 12),
               AnimatedSwitcher(
                 duration: const Duration(milliseconds: 360),
-                transitionBuilder: (child, animation) {
-                  return ScaleTransition(
-                    scale: animation,
-                    child: FadeTransition(opacity: animation, child: child),
-                  );
-                },
                 child: Container(
                   key: ValueKey(badge),
                   padding: const EdgeInsets.symmetric(
@@ -708,7 +653,7 @@ class DeliveryStatusCard extends StatelessWidget {
                   child: Text(
                     badge,
                     style: const TextStyle(
-                      color: Color(0xFF4DFFB5),
+                      color: AppTheme.green,
                       fontSize: 12.5,
                       fontWeight: FontWeight.w900,
                     ),
@@ -723,22 +668,67 @@ class DeliveryStatusCard extends StatelessWidget {
   }
 }
 
-class AiSearchOrb extends StatefulWidget {
-  const AiSearchOrb({super.key});
+class _AnimatedText extends StatelessWidget {
+  final String text;
+  final double fontSize;
+  final Color color;
+  final FontWeight fontWeight;
+
+  const _AnimatedText({
+    required this.text,
+    required this.fontSize,
+    required this.color,
+    required this.fontWeight,
+  });
 
   @override
-  State<AiSearchOrb> createState() => _AiSearchOrbState();
+  Widget build(BuildContext context) {
+    return AnimatedSwitcher(
+      duration: const Duration(milliseconds: 450),
+      transitionBuilder: (child, animation) {
+        return FadeTransition(
+          opacity: animation,
+          child: SlideTransition(
+            position: Tween<Offset>(
+              begin: const Offset(0, 0.30),
+              end: Offset.zero,
+            ).animate(animation),
+            child: child,
+          ),
+        );
+      },
+      child: Text(
+        text,
+        key: ValueKey(text),
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: TextStyle(
+          color: color,
+          fontSize: fontSize,
+          fontWeight: fontWeight,
+          letterSpacing: -0.2,
+        ),
+      ),
+    );
+  }
 }
 
-class _AiSearchOrbState extends State<AiSearchOrb>
+class _AiSearchOrb extends StatefulWidget {
+  const _AiSearchOrb();
+
+  @override
+  State<_AiSearchOrb> createState() => _AiSearchOrbState();
+}
+
+class _AiSearchOrbState extends State<_AiSearchOrb>
     with SingleTickerProviderStateMixin {
-  late final AnimationController _orbController;
+  late final AnimationController controller;
 
   @override
   void initState() {
     super.initState();
 
-    _orbController = AnimationController(
+    controller = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1800),
     )..repeat();
@@ -746,47 +736,26 @@ class _AiSearchOrbState extends State<AiSearchOrb>
 
   @override
   void dispose() {
-    _orbController.dispose();
+    controller.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return AnimatedBuilder(
-      animation: _orbController,
-      builder: (context, _) {
+      animation: controller,
+      builder: (_, __) {
         return CustomPaint(
           size: const Size(230, 230),
-          painter: AiOrbPainter(progress: _orbController.value),
-          child: SizedBox(
+          painter: _AiOrbPainter(controller.value),
+          child: const SizedBox(
             width: 230,
             height: 230,
             child: Center(
-              child: Container(
-                width: 82,
-                height: 82,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  gradient: const LinearGradient(
-                    colors: [
-                      Color(0xFFFFB84D),
-                      Color(0xFF4DFFB5),
-                      Color(0xFF45D5FF),
-                    ],
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: const Color(0xFF4DFFB5).withOpacity(0.38),
-                      blurRadius: 38,
-                      spreadRadius: 5,
-                    ),
-                  ],
-                ),
-                child: const Icon(
-                  Icons.auto_awesome_rounded,
-                  color: Color(0xFF07100F),
-                  size: 38,
-                ),
+              child: Icon(
+                Icons.auto_awesome_rounded,
+                color: AppTheme.bg,
+                size: 38,
               ),
             ),
           ),
@@ -796,10 +765,10 @@ class _AiSearchOrbState extends State<AiSearchOrb>
   }
 }
 
-class AiOrbPainter extends CustomPainter {
+class _AiOrbPainter extends CustomPainter {
   final double progress;
 
-  AiOrbPainter({required this.progress});
+  _AiOrbPainter(this.progress);
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -807,15 +776,31 @@ class AiOrbPainter extends CustomPainter {
 
     for (int i = 0; i < 4; i++) {
       final delayed = (progress + i * 0.24) % 1;
-      final radius = 42 + delayed * 86;
 
-      final paint = Paint()
-        ..color = const Color(0xFF4DFFB5).withOpacity((1 - delayed) * 0.22)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 2.4;
-
-      canvas.drawCircle(center, radius, paint);
+      canvas.drawCircle(
+        center,
+        42 + delayed * 86,
+        Paint()
+          ..color = AppTheme.green.withOpacity((1 - delayed) * 0.22)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 2.4,
+      );
     }
+
+    canvas.drawCircle(
+      center,
+      42,
+      Paint()
+        ..shader = const LinearGradient(
+          colors: [
+            AppTheme.orange,
+            AppTheme.green,
+            AppTheme.cyan,
+          ],
+        ).createShader(
+          Rect.fromCircle(center: center, radius: 42),
+        ),
+    );
 
     final particles = [
       Offset(center.dx - 76, center.dy - 28),
@@ -830,30 +815,29 @@ class AiOrbPainter extends CustomPainter {
       canvas.drawCircle(
         particles[i],
         4 + pulse * 2,
-        Paint()..color = const Color(0xFFFFB84D).withOpacity(0.85),
+        Paint()..color = AppTheme.orange.withOpacity(0.85),
       );
 
       canvas.drawCircle(
         particles[i],
         13 + pulse * 4,
-        Paint()..color = const Color(0xFFFFB84D).withOpacity(0.08),
+        Paint()..color = AppTheme.orange.withOpacity(0.08),
       );
     }
   }
 
   @override
-  bool shouldRepaint(covariant AiOrbPainter oldDelegate) {
+  bool shouldRepaint(covariant _AiOrbPainter oldDelegate) {
     return oldDelegate.progress != progress;
   }
 }
 
-class MapMarker extends StatelessWidget {
+class _MapMarker extends StatelessWidget {
   final IconData icon;
   final String label;
   final Color color;
 
-  const MapMarker({
-    super.key,
+  const _MapMarker({
     required this.icon,
     required this.label,
     required this.color,
@@ -887,7 +871,7 @@ class MapMarker extends StatelessWidget {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
           decoration: BoxDecoration(
-            color: const Color(0xFF07100F).withOpacity(0.74),
+            color: AppTheme.glass,
             borderRadius: BorderRadius.circular(30),
             border: Border.all(
               color: Colors.white.withOpacity(0.08),
@@ -907,8 +891,8 @@ class MapMarker extends StatelessWidget {
   }
 }
 
-class ScooterMarker extends StatelessWidget {
-  const ScooterMarker({super.key});
+class _ScooterMarker extends StatelessWidget {
+  const _ScooterMarker();
 
   @override
   Widget build(BuildContext context) {
@@ -919,20 +903,20 @@ class ScooterMarker extends StatelessWidget {
         shape: BoxShape.circle,
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF4DFFB5).withOpacity(0.35),
+            color: AppTheme.green.withOpacity(0.35),
             blurRadius: 30,
             spreadRadius: 4,
           ),
         ],
       ),
       child: CustomPaint(
-        painter: ScooterPainter(),
+        painter: _ScooterPainter(),
       ),
     );
   }
 }
 
-class ScooterPainter extends CustomPainter {
+class _ScooterPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final center = size.center(Offset.zero);
@@ -941,60 +925,45 @@ class ScooterPainter extends CustomPainter {
       center,
       30,
       Paint()
-        ..color = const Color(0xFF4DFFB5).withOpacity(0.14)
+        ..color = AppTheme.green.withOpacity(0.14)
         ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 14),
     );
 
     final bodyPaint = Paint()
       ..shader = const LinearGradient(
         colors: [
-          Color(0xFFFFB84D),
-          Color(0xFF4DFFB5),
+          AppTheme.orange,
+          AppTheme.green,
         ],
       ).createShader(Offset.zero & size);
 
-    final darkPaint = Paint()..color = const Color(0xFF07100F);
+    final darkPaint = Paint()..color = AppTheme.bg;
     final whitePaint = Paint()..color = Colors.white.withOpacity(0.9);
 
-    final body = RRect.fromRectAndRadius(
-      Rect.fromCenter(
-        center: Offset(center.dx + 3, center.dy),
-        width: 42,
-        height: 25,
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(
+        Rect.fromCenter(
+          center: Offset(center.dx + 3, center.dy),
+          width: 42,
+          height: 25,
+        ),
+        const Radius.circular(14),
       ),
-      const Radius.circular(14),
+      bodyPaint,
     );
 
-    canvas.drawRRect(body, bodyPaint);
+    canvas.drawCircle(Offset(center.dx - 14, center.dy + 15), 8, darkPaint);
+    canvas.drawCircle(Offset(center.dx + 18, center.dy + 15), 8, darkPaint);
 
-    canvas.drawCircle(
-      Offset(center.dx - 14, center.dy + 15),
-      8,
-      darkPaint,
-    );
-    canvas.drawCircle(
-      Offset(center.dx + 18, center.dy + 15),
-      8,
-      darkPaint,
-    );
-
-    canvas.drawCircle(
-      Offset(center.dx - 14, center.dy + 15),
-      3,
-      whitePaint,
-    );
-    canvas.drawCircle(
-      Offset(center.dx + 18, center.dy + 15),
-      3,
-      whitePaint,
-    );
+    canvas.drawCircle(Offset(center.dx - 14, center.dy + 15), 3, whitePaint);
+    canvas.drawCircle(Offset(center.dx + 18, center.dy + 15), 3, whitePaint);
 
     canvas.drawRRect(
       RRect.fromRectAndRadius(
         Rect.fromLTWH(center.dx + 4, center.dy - 15, 18, 10),
         const Radius.circular(6),
       ),
-      Paint()..color = const Color(0xFF07100F).withOpacity(0.72),
+      Paint()..color = AppTheme.bg.withOpacity(0.72),
     );
 
     final handlePaint = Paint()
@@ -1008,24 +977,21 @@ class ScooterPainter extends CustomPainter {
       handlePaint,
     );
 
-    canvas.drawCircle(
-      Offset(center.dx + 31, center.dy - 18),
-      2.5,
-      whitePaint,
-    );
+    canvas.drawCircle(Offset(center.dx + 31, center.dy - 18), 2.5, whitePaint);
   }
 
   @override
-  bool shouldRepaint(covariant ScooterPainter oldDelegate) => false;
+  bool shouldRepaint(covariant _ScooterPainter oldDelegate) => false;
 }
 
-class DeliveryBottomSheet extends StatelessWidget {
+class _DeliveryBottomSheet extends StatelessWidget {
+  final FoodItem food;
   final int activeStep;
   final bool isDelivered;
   final int etaMinutes;
 
-  const DeliveryBottomSheet({
-    super.key,
+  const _DeliveryBottomSheet({
+    required this.food,
     required this.activeStep,
     required this.isDelivered,
     required this.etaMinutes,
@@ -1040,7 +1006,7 @@ class DeliveryBottomSheet extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.fromLTRB(18, 16, 18, 18),
           decoration: BoxDecoration(
-            color: const Color(0xFF07100F).withOpacity(0.88),
+            color: AppTheme.glass,
             borderRadius: BorderRadius.circular(36),
             border: Border.all(
               color: Colors.white.withOpacity(0.10),
@@ -1074,49 +1040,42 @@ class DeliveryBottomSheet extends StatelessWidget {
                     height: 66,
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(24),
-                      gradient: const LinearGradient(
+                      gradient: LinearGradient(
                         colors: [
-                          Color(0xFFFFB84D),
-                          Color(0xFF4DFFB5),
+                          food.color,
+                          AppTheme.green,
                         ],
                       ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: const Color(0xFFFFB84D).withOpacity(0.22),
-                          blurRadius: 26,
-                          spreadRadius: 2,
-                        ),
-                      ],
                     ),
-                    child: const Icon(
-                      Icons.lunch_dining_rounded,
-                      color: Color(0xFF07100F),
+                    child: Icon(
+                      food.icon,
+                      color: AppTheme.bg,
                       size: 34,
                     ),
                   ),
-
                   const SizedBox(width: 14),
-
-                  const Expanded(
+                  Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          "Classic Beef Burger",
-                          style: TextStyle(
+                          food.name,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
                             color: Colors.white,
                             fontSize: 19,
                             fontWeight: FontWeight.w900,
                             letterSpacing: -0.5,
                           ),
                         ),
-                        SizedBox(height: 5),
+                        const SizedBox(height: 5),
                         Text(
-                          "Burger House · Extra cheese · Fries",
+                          '${food.restaurant} · Extra cheese · Fries',
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            color: Color(0xFFB9C8C1),
+                          style: const TextStyle(
+                            color: AppTheme.muted,
                             fontSize: 12.5,
                             fontWeight: FontWeight.w500,
                           ),
@@ -1124,9 +1083,7 @@ class DeliveryBottomSheet extends StatelessWidget {
                       ],
                     ),
                   ),
-
                   const SizedBox(width: 12),
-
                   Container(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 12,
@@ -1140,9 +1097,9 @@ class DeliveryBottomSheet extends StatelessWidget {
                       ),
                     ),
                     child: Text(
-                      isDelivered ? "Done" : "$etaMinutes min",
+                      isDelivered ? 'Done' : '$etaMinutes min',
                       style: const TextStyle(
-                        color: Color(0xFF4DFFB5),
+                        color: AppTheme.green,
                         fontSize: 12.5,
                         fontWeight: FontWeight.w900,
                       ),
@@ -1153,7 +1110,7 @@ class DeliveryBottomSheet extends StatelessWidget {
 
               const SizedBox(height: 18),
 
-              DeliveryTimeline(activeStep: activeStep),
+              _DeliveryTimeline(activeStep: activeStep),
 
               const SizedBox(height: 18),
 
@@ -1162,12 +1119,12 @@ class DeliveryBottomSheet extends StatelessWidget {
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
                   color: isDelivered
-                      ? const Color(0xFF4DFFB5).withOpacity(0.13)
+                      ? AppTheme.green.withOpacity(0.13)
                       : Colors.white.withOpacity(0.055),
                   borderRadius: BorderRadius.circular(26),
                   border: Border.all(
                     color: isDelivered
-                        ? const Color(0xFF4DFFB5).withOpacity(0.28)
+                        ? AppTheme.green.withOpacity(0.28)
                         : Colors.white.withOpacity(0.07),
                   ),
                 ),
@@ -1176,35 +1133,27 @@ class DeliveryBottomSheet extends StatelessWidget {
                     Container(
                       width: 47,
                       height: 47,
-                      decoration: BoxDecoration(
+                      decoration: const BoxDecoration(
                         shape: BoxShape.circle,
-                        gradient: const LinearGradient(
+                        gradient: LinearGradient(
                           colors: [
-                            Color(0xFF4DFFB5),
-                            Color(0xFF45D5FF),
+                            AppTheme.green,
+                            AppTheme.cyan,
                           ],
                         ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: const Color(0xFF4DFFB5).withOpacity(0.24),
-                            blurRadius: 20,
-                          ),
-                        ],
                       ),
                       child: const Center(
                         child: Text(
-                          "HZ",
+                          'HZ',
                           style: TextStyle(
-                            color: Color(0xFF07100F),
+                            color: AppTheme.bg,
                             fontWeight: FontWeight.w900,
                             fontSize: 14,
                           ),
                         ),
                       ),
                     ),
-
                     const SizedBox(width: 12),
-
                     Expanded(
                       child: AnimatedSwitcher(
                         duration: const Duration(milliseconds: 400),
@@ -1214,24 +1163,23 @@ class DeliveryBottomSheet extends StatelessWidget {
                           children: [
                             Text(
                               isDelivered
-                                  ? "Hamza delivered your order"
-                                  : "Hamza is your delivery rider",
+                                  ? 'Hamza delivered your order'
+                                  : 'Hamza is your delivery rider',
                               style: const TextStyle(
                                 color: Colors.white,
                                 fontSize: 14.5,
                                 fontWeight: FontWeight.w800,
-                                letterSpacing: -0.2,
                               ),
                             ),
                             const SizedBox(height: 3),
                             Text(
                               isDelivered
-                                  ? "Thank you for ordering with us"
-                                  : "Honda 125 · KHI 5821 · 4.9 rating",
+                                  ? 'Thank you for ordering with us'
+                                  : 'Honda 125 · KHI 5821 · 4.9 rating',
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: const TextStyle(
-                                color: Color(0xFFB9C8C1),
+                                color: AppTheme.muted,
                                 fontSize: 12,
                                 fontWeight: FontWeight.w500,
                               ),
@@ -1240,20 +1188,16 @@ class DeliveryBottomSheet extends StatelessWidget {
                         ),
                       ),
                     ),
-
                     const SizedBox(width: 10),
-
                     _MiniActionButton(
                       icon: Icons.call_rounded,
-                      color: const Color(0xFF4DFFB5),
+                      color: AppTheme.green,
                       onTap: () {},
                     ),
-
                     const SizedBox(width: 9),
-
                     _MiniActionButton(
                       icon: Icons.chat_bubble_rounded,
-                      color: const Color(0xFF45D5FF),
+                      color: AppTheme.cyan,
                       onTap: () {},
                     ),
                   ],
@@ -1267,22 +1211,21 @@ class DeliveryBottomSheet extends StatelessWidget {
   }
 }
 
-class DeliveryTimeline extends StatelessWidget {
+class _DeliveryTimeline extends StatelessWidget {
   final int activeStep;
 
-  const DeliveryTimeline({
-    super.key,
+  const _DeliveryTimeline({
     required this.activeStep,
   });
 
   @override
   Widget build(BuildContext context) {
     final steps = [
-      _TimelineStepData("AI Match", Icons.auto_awesome_rounded),
-      _TimelineStepData("Accepted", Icons.receipt_long_rounded),
-      _TimelineStepData("Cooking", Icons.local_fire_department_rounded),
-      _TimelineStepData("On way", Icons.delivery_dining_rounded),
-      _TimelineStepData("Done", Icons.check_rounded),
+      _StepData('AI', Icons.auto_awesome_rounded),
+      _StepData('Accepted', Icons.receipt_long_rounded),
+      _StepData('Cooking', Icons.local_fire_department_rounded),
+      _StepData('On way', Icons.delivery_dining_rounded),
+      _StepData('Done', Icons.check_rounded),
     ];
 
     return Row(
@@ -1298,19 +1241,17 @@ class DeliveryTimeline extends StatelessWidget {
                   children: [
                     AnimatedContainer(
                       duration: const Duration(milliseconds: 420),
-                      curve: Curves.easeOut,
                       width: isCurrent ? 42 : 36,
                       height: isCurrent ? 42 : 36,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         color: isActive
-                            ? const Color(0xFF4DFFB5)
+                            ? AppTheme.green
                             : Colors.white.withOpacity(0.075),
                         boxShadow: isCurrent
                             ? [
                                 BoxShadow(
-                                  color:
-                                      const Color(0xFF4DFFB5).withOpacity(0.28),
+                                  color: AppTheme.green.withOpacity(0.28),
                                   blurRadius: 20,
                                   spreadRadius: 2,
                                 ),
@@ -1320,7 +1261,7 @@ class DeliveryTimeline extends StatelessWidget {
                       child: Icon(
                         steps[index].icon,
                         color: isActive
-                            ? const Color(0xFF07100F)
+                            ? AppTheme.bg
                             : Colors.white.withOpacity(0.38),
                         size: 18,
                       ),
@@ -1349,7 +1290,7 @@ class DeliveryTimeline extends StatelessWidget {
                   margin: const EdgeInsets.only(bottom: 22),
                   decoration: BoxDecoration(
                     color: index < activeStep
-                        ? const Color(0xFF4DFFB5)
+                        ? AppTheme.green
                         : Colors.white.withOpacity(0.10),
                     borderRadius: BorderRadius.circular(20),
                   ),
@@ -1362,11 +1303,11 @@ class DeliveryTimeline extends StatelessWidget {
   }
 }
 
-class _TimelineStepData {
+class _StepData {
   final String label;
   final IconData icon;
 
-  const _TimelineStepData(this.label, this.icon);
+  const _StepData(this.label, this.icon);
 }
 
 class _MiniActionButton extends StatelessWidget {

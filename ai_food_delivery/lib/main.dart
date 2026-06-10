@@ -1,18 +1,22 @@
-import 'package:ai_food_delivery/ai_delivery_screen.dart';
 import 'package:flutter/material.dart';
 
+import 'ai_food_discovery_screen.dart';
+import 'app_theme.dart';
+
 void main() {
-  runApp(const FoodDeliveryConceptApp());
+  runApp(const AiFoodDeliveryConceptApp());
 }
 
-class FoodDeliveryConceptApp extends StatelessWidget {
-  const FoodDeliveryConceptApp({super.key});
+class AiFoodDeliveryConceptApp extends StatelessWidget {
+  const AiFoodDeliveryConceptApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return const MaterialApp(
+    return MaterialApp(
+      title: 'AI Food Delivery Concept',
       debugShowCheckedModeBanner: false,
-      home: AiDeliveryTrackingScreen(),
+      theme: AppTheme.darkTheme,
+      home: const AiFoodDiscoveryScreen(),
     );
   }
 }
