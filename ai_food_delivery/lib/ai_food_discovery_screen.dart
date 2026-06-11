@@ -185,7 +185,7 @@ class _AiFoodDiscoveryScreenState extends State<AiFoodDiscoveryScreen>
                                 height: 98,
                                 child: Center(
                                   child: Icon(
-                                    Icons.auto_awesome_rounded,
+                                    Icons.restaurant_rounded,
                                     color: AppTheme.bg,
                                     size: 30,
                                   ),
@@ -200,121 +200,139 @@ class _AiFoodDiscoveryScreenState extends State<AiFoodDiscoveryScreen>
                     PremiumSurface(
                       padding: const EdgeInsets.all(16),
                       borderRadius: BorderRadius.circular(30),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Wrap(
-                                  spacing: 10,
-                                  runSpacing: 8,
-                                  crossAxisAlignment: WrapCrossAlignment.center,
+                      child: LayoutBuilder(
+                        builder: (context, constraints) {
+                          final imageSize = constraints.maxWidth < 360
+                              ? 92.0
+                              : 104.0;
+
+                          return Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 10,
-                                        vertical: 7,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: AppTheme.green.withOpacity(0.14),
-                                        borderRadius: BorderRadius.circular(
-                                          999,
+                                    Wrap(
+                                      spacing: 10,
+                                      runSpacing: 8,
+                                      crossAxisAlignment:
+                                          WrapCrossAlignment.center,
+                                      children: [
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 10,
+                                            vertical: 7,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: AppTheme.green.withOpacity(
+                                              0.14,
+                                            ),
+                                            borderRadius: BorderRadius.circular(
+                                              999,
+                                            ),
+                                          ),
+                                          child: const Text(
+                                            'Top Choice',
+                                            style: TextStyle(
+                                              color: AppTheme.green,
+                                              fontSize: 11.5,
+                                              fontWeight: FontWeight.w800,
+                                            ),
+                                          ),
                                         ),
-                                      ),
-                                      child: const Text(
-                                        'Top Choice',
-                                        style: TextStyle(
-                                          color: AppTheme.green,
-                                          fontSize: 11.5,
-                                          fontWeight: FontWeight.w800,
+                                        const Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Icon(
+                                              Icons.bolt_rounded,
+                                              color: AppTheme.orange,
+                                              size: 18,
+                                            ),
+                                            SizedBox(width: 4),
+                                            Text(
+                                              '98% match',
+                                              style: TextStyle(
+                                                color: Colors.white,
+                                                fontSize: 12,
+                                                fontWeight: FontWeight.w800,
+                                              ),
+                                            ),
+                                          ],
                                         ),
+                                      ],
+                                    ),
+
+                                    const SizedBox(height: 12),
+
+                                    Text(
+                                      _selectedFood.name,
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 20,
+                                        fontWeight: FontWeight.w900,
+                                        letterSpacing: -0.7,
                                       ),
                                     ),
+
+                                    const SizedBox(height: 8),
+
+                                    Text(
+                                      '${_selectedFood.restaurant} · ${_selectedFood.distance} away · ${_selectedFood.calories} kcal',
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: const TextStyle(
+                                        color: AppTheme.muted,
+                                        fontSize: 12.5,
+                                        fontWeight: FontWeight.w500,
+                                        height: 1.35,
+                                      ),
+                                    ),
+
+                                    const SizedBox(height: 14),
+
                                     Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: const [
-                                        Icon(
-                                          Icons.bolt_rounded,
-                                          color: AppTheme.orange,
-                                          size: 18,
+                                      children: [
+                                        _PillStat(
+                                          icon: Icons.star_rounded,
+                                          label: _selectedFood.rating
+                                              .toStringAsFixed(1),
+                                          accent: AppTheme.orange,
                                         ),
-                                        SizedBox(width: 4),
-                                        Text(
-                                          '98% match',
-                                          style: TextStyle(
-                                            color: Colors.white,
-                                            fontSize: 12,
-                                            fontWeight: FontWeight.w800,
-                                          ),
+                                        const SizedBox(width: 7),
+                                        _PillStat(
+                                          icon: Icons.schedule_rounded,
+                                          label: _selectedFood.time,
+                                          accent: AppTheme.cyan,
+                                        ),
+                                        const SizedBox(width: 7),
+                                        _PillStat(
+                                          icon: Icons.local_offer_rounded,
+                                          label: _selectedFood.discount,
+                                          accent: AppTheme.green,
                                         ),
                                       ],
                                     ),
                                   ],
                                 ),
-                                const SizedBox(height: 12),
-                                Text(
-                                  _selectedFood.name,
-                                  maxLines: 2,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 20,
-                                    fontWeight: FontWeight.w900,
-                                    letterSpacing: -0.7,
-                                  ),
+                              ),
+
+                              const SizedBox(width: 10),
+
+                              SizedBox(
+                                width: imageSize,
+                                height: imageSize,
+                                child: PremiumNetworkImage(
+                                  imageUrl: _selectedFood.imageUrl,
+                                  heroTag: _selectedFood.imageUrl,
+                                  borderRadius: BorderRadius.circular(26),
                                 ),
-                                const SizedBox(height: 8),
-                                Text(
-                                  '${_selectedFood.restaurant} · ${_selectedFood.distance} away · ${_selectedFood.calories} kcal',
-                                  maxLines: 2,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(
-                                    color: AppTheme.muted,
-                                    fontSize: 12.5,
-                                    fontWeight: FontWeight.w500,
-                                    height: 1.35,
-                                  ),
-                                ),
-                                const SizedBox(height: 14),
-                                Row(
-                                  children: [
-                                    _PillStat(
-                                      icon: Icons.star_rounded,
-                                      label: _selectedFood.rating
-                                          .toStringAsFixed(1),
-                                      accent: AppTheme.orange,
-                                    ),
-                                    const SizedBox(width: 8),
-                                    _PillStat(
-                                      icon: Icons.schedule_rounded,
-                                      label: _selectedFood.time,
-                                      accent: AppTheme.cyan,
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Expanded(
-                                      child: _PillStat(
-                                        icon: Icons.local_offer_rounded,
-                                        label: _selectedFood.discount,
-                                        accent: AppTheme.green,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(width: 14),
-                          SizedBox(
-                            width: 122,
-                            height: 122,
-                            child: PremiumNetworkImage(
-                              imageUrl: _selectedFood.imageUrl,
-                              heroTag: _selectedFood.imageUrl,
-                              borderRadius: BorderRadius.circular(28),
-                            ),
-                          ),
-                        ],
+                              ),
+                            ],
+                          );
+                        },
                       ),
                     ),
                     const SizedBox(height: 18),
@@ -494,7 +512,8 @@ class _PillStat extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 9),
+      height: 32,
+      padding: const EdgeInsets.symmetric(horizontal: 8),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(999),
         color: accent.withOpacity(0.12),
@@ -503,13 +522,15 @@ class _PillStat extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, color: accent, size: 14),
-          const SizedBox(width: 5),
+          Icon(icon, color: accent, size: 13),
+          const SizedBox(width: 4),
           Text(
             label,
+            maxLines: 1,
+            softWrap: false,
             style: const TextStyle(
               color: Colors.white,
-              fontSize: 11.5,
+              fontSize: 10.5,
               fontWeight: FontWeight.w800,
             ),
           ),

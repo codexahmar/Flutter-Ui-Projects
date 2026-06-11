@@ -20,21 +20,25 @@ class AiDeliveryTrackingScreen extends StatefulWidget {
 class _AiDeliveryTrackingScreenState extends State<AiDeliveryTrackingScreen>
     with SingleTickerProviderStateMixin {
   late final AnimationController _controller;
-  double _smoothedAngle = 0;
 
+  /// Route is moved upward so the bottom sheet does not cover it.
   final List<Offset> routePoints = const [
-    Offset(0.2, 0.2),
-    Offset(0.5, 0.35),
-    Offset(0.8, 0.6),
+    Offset(0.16, 0.28),
+    Offset(0.30, 0.24),
+    Offset(0.46, 0.32),
+    Offset(0.56, 0.42),
+    Offset(0.70, 0.45),
+    Offset(0.84, 0.54),
   ];
 
   @override
   void initState() {
     super.initState();
+
     _controller = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 18),
-    )..repeat();
+    )..forward(); // Runs once only. No repeat.
   }
 
   @override
@@ -52,20 +56,14 @@ class _AiDeliveryTrackingScreenState extends State<AiDeliveryTrackingScreen>
   bool get isDelivered => _controller.value >= 0.94;
 
   double get routeProgress {
-    if (_controller.value < 0.64) {
-      return 0;
-    }
-    if (_controller.value >= 0.94) {
-      return 1;
-    }
+    if (_controller.value < 0.64) return 0;
+    if (_controller.value >= 0.94) return 1;
 
     return ((_controller.value - 0.64) / 0.30).clamp(0.0, 1.0);
   }
 
   int get etaMinutes {
-    if (isDelivered) {
-      return 0;
-    }
+    if (isDelivered) return 0;
 
     final eta = 10 - (routeProgress * 10);
     return eta.ceil().clamp(1, 10);
@@ -75,77 +73,69 @@ class _AiDeliveryTrackingScreenState extends State<AiDeliveryTrackingScreen>
     if (isSearching) return 0;
     if (isAccepted) return 1;
     if (isPreparing) return 2;
-    if (isRiderAssigned) return 3;
-    if (isMoving) return 4;
-    return 5;
+    if (isRiderAssigned || isMoving) return 3;
+    return 4;
   }
 
   String get title {
-    if (isSearching) return 'AI finding best rider';
+    if (isSearching) return 'Finding nearby rider';
     if (isAccepted) return 'Order accepted';
     if (isPreparing) return 'Preparing your meal';
     if (isRiderAssigned) return 'Rider assigned';
-    if (isMoving) return 'On the way';
+    if (isMoving) return 'Out for delivery';
     return 'Delivered';
   }
 
   String get subtitle {
-    if (isSearching) return 'Scanning nearby riders and the fastest route.';
-    if (isAccepted) return '${widget.food.restaurant} confirmed the order';
-    if (isPreparing) return 'Fresh prep in progress inside the restaurant';
-    if (isRiderAssigned) return 'Hamza is at the pickup point';
-    if (isMoving) return 'Your rider is moving through the city';
-    return 'Enjoy your meal. Delivered with care.';
-  }
-
-  String get badge {
-    if (isSearching) return 'AI';
-    if (isAccepted) return 'Accepted';
-    if (isPreparing) return 'Cooking';
-    if (isRiderAssigned) return 'Pickup';
-    if (isMoving) return '$etaMinutes min';
-    return 'Done';
+    if (isSearching) return 'Checking nearby riders and fastest route.';
+    if (isAccepted) return '${widget.food.restaurant} confirmed your order';
+    if (isPreparing) return 'Your meal is being prepared fresh';
+    if (isRiderAssigned) return 'Hamza picked up your order';
+    if (isMoving) return '$etaMinutes min away · Live tracking';
+    return 'Your order has arrived.';
   }
 
   Path _buildRoutePath(Size size) {
     final points = routePoints
-        .map((p) => Offset(p.dx * size.width, p.dy * size.height))
+        .map((point) => Offset(point.dx * size.width, point.dy * size.height))
         .toList();
 
     final path = Path()..moveTo(points.first.dx, points.first.dy);
 
-    for (var i = 1; i < points.length; i++) {
+    for (int i = 1; i < points.length; i++) {
       final previous = points[i - 1];
       final current = points[i];
-      final midX = (previous.dx + current.dx) / 2;
 
-      path.cubicTo(midX, previous.dy, midX, current.dy, current.dx, current.dy);
+      final controlOne = Offset(
+        previous.dx + (current.dx - previous.dx) * 0.42,
+        previous.dy - 20,
+      );
+
+      final controlTwo = Offset(
+        previous.dx + (current.dx - previous.dx) * 0.58,
+        current.dy + 20,
+      );
+
+      path.cubicTo(
+        controlOne.dx,
+        controlOne.dy,
+        controlTwo.dx,
+        controlTwo.dy,
+        current.dx,
+        current.dy,
+      );
     }
 
     return path;
   }
 
-  Tangent _routeTangent(Size size) {
+  Offset _scooterPosition(Size size) {
     final path = _buildRoutePath(size);
     final metric = path.computeMetrics().first;
-    final offset = metric.length * routeProgress;
-    return metric.getTangentForOffset(offset) ?? metric.getTangentForOffset(0)!;
-  }
+    final distance = metric.length * routeProgress;
+    final tangent = metric.getTangentForOffset(distance);
 
-  double _normalizeAngle(double angle) {
-    while (angle <= -pi) {
-      angle += pi * 2;
-    }
-    while (angle > pi) {
-      angle -= pi * 2;
-    }
-    return angle;
-  }
-
-  double _smoothAngle(double target) {
-    final delta = _normalizeAngle(target - _smoothedAngle);
-    _smoothedAngle += delta * 0.14;
-    return _smoothedAngle;
+    return tangent?.position ?? metric.getTangentForOffset(0)!.position;
   }
 
   @override
@@ -156,14 +146,14 @@ class _AiDeliveryTrackingScreenState extends State<AiDeliveryTrackingScreen>
       body: LayoutBuilder(
         builder: (context, constraints) {
           final size = Size(constraints.maxWidth, constraints.maxHeight);
-          final bottomSheetHeight = min(392.0, size.height * 0.46);
+
+          /// Smaller bottom sheet so map + route stay visible.
+          final bottomSheetHeight = min(255.0, size.height * 0.31);
 
           return AnimatedBuilder(
             animation: _controller,
             builder: (context, _) {
-              final tangent = _routeTangent(size);
-              final scooterPosition = tangent.position;
-              final scooterAngle = tangent.angle;
+              final scooterPosition = _scooterPosition(size);
 
               return Stack(
                 children: [
@@ -172,72 +162,84 @@ class _AiDeliveryTrackingScreenState extends State<AiDeliveryTrackingScreen>
                       painter: _DeliveryMapPainter(
                         routePoints: routePoints,
                         routeProgress: routeProgress,
-                        aiPulseProgress: _controller.value,
-                        showRoute: !isSearching,
+                        pulseProgress: _controller.value,
+                        isSearching: isSearching,
                       ),
                     ),
                   ),
-                  Positioned.fill(
-                    child: Container(
-                      decoration: const BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                          colors: [
-                            Color(0x66000000),
-                            Colors.transparent,
-                            Color(0xB9000000),
-                          ],
+
+                  /// Only slight readability overlays. Not covering the map heavily.
+                  Positioned(
+                    left: 0,
+                    right: 0,
+                    top: 0,
+                    height: 150,
+                    child: IgnorePointer(
+                      child: Container(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [
+                              Colors.black.withOpacity(0.48),
+                              Colors.transparent,
+                            ],
+                          ),
                         ),
                       ),
                     ),
                   ),
+
                   SafeArea(
                     child: Padding(
                       padding: const EdgeInsets.fromLTRB(20, 14, 20, 0),
                       child: _TrackingTopCard(
                         title: title,
                         subtitle: subtitle,
-                        badge: badge,
                         etaMinutes: etaMinutes,
                         isDelivered: isDelivered,
+                        isSearching: isSearching,
                       ),
                     ),
                   ),
+
                   if (isSearching)
                     Positioned(
-                      top: size.height * 0.31,
+                      top: size.height * 0.32,
                       left: 0,
                       right: 0,
-                      child: const Center(child: _AiSearchOrb()),
+                      child: const Center(child: _RiderSearchPulse()),
                     ),
+
                   Positioned(
-                    left: size.width * routePoints.first.dx - 28,
-                    top: size.height * routePoints.first.dy - 30,
+                    left: size.width * routePoints.first.dx - 26,
+                    top: size.height * routePoints.first.dy - 28,
                     child: const _MapMarker(
                       icon: Icons.restaurant_rounded,
                       label: 'Restaurant',
                       color: AppTheme.orange,
                     ),
                   ),
+
                   Positioned(
-                    left: size.width * routePoints.last.dx - 28,
-                    top: size.height * routePoints.last.dy - 30,
+                    left: size.width * routePoints.last.dx - 26,
+                    top: size.height * routePoints.last.dy - 28,
                     child: const _MapMarker(
                       icon: Icons.home_rounded,
-                      label: 'Your location',
+                      label: 'Home',
                       color: AppTheme.green,
                     ),
                   ),
+
                   if (!isSearching && !isAccepted && !isPreparing)
                     Positioned(
                       left: scooterPosition.dx - 34,
                       top: scooterPosition.dy - 34,
-                      child: Transform.rotate(
-                        angle: scooterAngle,
-                        child: const _ScooterMarker(),
-                      ),
+
+                      /// No rotation. Scooter only moves on the route.
+                      child: const _ScooterMarker(),
                     ),
+
                   Positioned(
                     left: 18,
                     right: 18,
@@ -249,7 +251,7 @@ class _AiDeliveryTrackingScreenState extends State<AiDeliveryTrackingScreen>
                         activeStep: activeStep,
                         isDelivered: isDelivered,
                         etaMinutes: etaMinutes,
-                        isMoving: isMoving,
+                        onDone: () => Navigator.pop(context),
                       ),
                     ),
                   ),
@@ -266,14 +268,14 @@ class _AiDeliveryTrackingScreenState extends State<AiDeliveryTrackingScreen>
 class _DeliveryMapPainter extends CustomPainter {
   final List<Offset> routePoints;
   final double routeProgress;
-  final double aiPulseProgress;
-  final bool showRoute;
+  final double pulseProgress;
+  final bool isSearching;
 
   _DeliveryMapPainter({
     required this.routePoints,
     required this.routeProgress,
-    required this.aiPulseProgress,
-    required this.showRoute,
+    required this.pulseProgress,
+    required this.isSearching,
   });
 
   @override
@@ -284,26 +286,43 @@ class _DeliveryMapPainter extends CustomPainter {
     _drawLabels(canvas, size);
     _drawDots(canvas, size);
 
-    if (showRoute) {
-      _drawRoute(canvas, size);
-    } else {
-      _drawAiScan(canvas, size);
+    /// Route is drawn after roads and blocks, so it stays visible.
+    _drawRoute(canvas, size);
+
+    if (isSearching) {
+      _drawSearchPulse(canvas, size);
     }
   }
 
   Path _buildRoutePath(Size size) {
     final points = routePoints
-        .map((p) => Offset(p.dx * size.width, p.dy * size.height))
+        .map((point) => Offset(point.dx * size.width, point.dy * size.height))
         .toList();
 
     final path = Path()..moveTo(points.first.dx, points.first.dy);
 
-    for (var i = 1; i < points.length; i++) {
+    for (int i = 1; i < points.length; i++) {
       final previous = points[i - 1];
       final current = points[i];
-      final midX = (previous.dx + current.dx) / 2;
 
-      path.cubicTo(midX, previous.dy, midX, current.dy, current.dx, current.dy);
+      final controlOne = Offset(
+        previous.dx + (current.dx - previous.dx) * 0.42,
+        previous.dy - 20,
+      );
+
+      final controlTwo = Offset(
+        previous.dx + (current.dx - previous.dx) * 0.58,
+        current.dy + 20,
+      );
+
+      path.cubicTo(
+        controlOne.dx,
+        controlOne.dy,
+        controlTwo.dx,
+        controlTwo.dy,
+        current.dx,
+        current.dy,
+      );
     }
 
     return path;
@@ -333,7 +352,7 @@ class _DeliveryMapPainter extends CustomPainter {
       Paint()
         ..shader =
             RadialGradient(
-              colors: [AppTheme.green.withOpacity(0.16), Colors.transparent],
+              colors: [AppTheme.green.withOpacity(0.17), Colors.transparent],
             ).createShader(
               Rect.fromCircle(
                 center: Offset(size.width * 0.82, size.height * 0.14),
@@ -343,16 +362,16 @@ class _DeliveryMapPainter extends CustomPainter {
     );
 
     canvas.drawCircle(
-      Offset(size.width * 0.18, size.height * 0.32),
-      250,
+      Offset(size.width * 0.16, size.height * 0.34),
+      240,
       Paint()
         ..shader =
             RadialGradient(
               colors: [AppTheme.orange.withOpacity(0.12), Colors.transparent],
             ).createShader(
               Rect.fromCircle(
-                center: Offset(size.width * 0.18, size.height * 0.32),
-                radius: 250,
+                center: Offset(size.width * 0.16, size.height * 0.34),
+                radius: 240,
               ),
             ),
     );
@@ -360,13 +379,13 @@ class _DeliveryMapPainter extends CustomPainter {
 
   void _drawRoads(Canvas canvas, Size size) {
     final roadGlow = Paint()
-      ..color = Colors.white.withOpacity(0.02)
+      ..color = Colors.white.withOpacity(0.018)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 54
       ..strokeCap = StrokeCap.round;
 
     final roadBase = Paint()
-      ..color = Colors.white.withOpacity(0.05)
+      ..color = Colors.white.withOpacity(0.045)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 22
       ..strokeCap = StrokeCap.round;
@@ -378,39 +397,42 @@ class _DeliveryMapPainter extends CustomPainter {
       ..strokeCap = StrokeCap.round;
 
     final roadA = Path()
-      ..moveTo(-40, size.height * 0.28)
+      ..moveTo(-40, size.height * 0.25)
       ..cubicTo(
         size.width * 0.20,
-        size.height * 0.18,
+        size.height * 0.14,
         size.width * 0.48,
-        size.height * 0.42,
+        size.height * 0.40,
         size.width + 40,
-        size.height * 0.26,
+        size.height * 0.24,
       );
+
     final roadB = Path()
       ..moveTo(size.width * 0.10, -40)
       ..cubicTo(
         size.width * 0.12,
         size.height * 0.24,
         size.width * 0.30,
-        size.height * 0.60,
+        size.height * 0.54,
         size.width * 0.18,
         size.height + 40,
       );
+
     final roadC = Path()
-      ..moveTo(size.width + 30, size.height * 0.68)
+      ..moveTo(size.width + 30, size.height * 0.58)
       ..cubicTo(
         size.width * 0.74,
-        size.height * 0.58,
+        size.height * 0.48,
         size.width * 0.48,
-        size.height * 0.84,
+        size.height * 0.66,
         -30,
-        size.height * 0.82,
+        size.height * 0.67,
       );
 
     canvas.drawPath(roadA, roadGlow);
     canvas.drawPath(roadB, roadGlow);
     canvas.drawPath(roadC, roadGlow);
+
     canvas.drawPath(roadA, roadBase);
     canvas.drawPath(roadB, roadThin);
     canvas.drawPath(roadC, roadBase);
@@ -418,6 +440,7 @@ class _DeliveryMapPainter extends CustomPainter {
 
   void _drawBlocks(Canvas canvas, Size size) {
     final fill = Paint()..color = Colors.white.withOpacity(0.03);
+
     final border = Paint()
       ..color = Colors.white.withOpacity(0.04)
       ..style = PaintingStyle.stroke
@@ -427,14 +450,15 @@ class _DeliveryMapPainter extends CustomPainter {
       Rect.fromLTWH(size.width * 0.08, size.height * 0.10, 88, 62),
       Rect.fromLTWH(size.width * 0.25, size.height * 0.12, 126, 74),
       Rect.fromLTWH(size.width * 0.58, size.height * 0.11, 126, 78),
-      Rect.fromLTWH(size.width * 0.14, size.height * 0.46, 118, 88),
-      Rect.fromLTWH(size.width * 0.56, size.height * 0.42, 132, 114),
-      Rect.fromLTWH(size.width * 0.10, size.height * 0.75, 124, 78),
-      Rect.fromLTWH(size.width * 0.62, size.height * 0.74, 116, 74),
+      Rect.fromLTWH(size.width * 0.14, size.height * 0.46, 118, 82),
+      Rect.fromLTWH(size.width * 0.56, size.height * 0.40, 132, 100),
+      Rect.fromLTWH(size.width * 0.10, size.height * 0.68, 124, 70),
+      Rect.fromLTWH(size.width * 0.62, size.height * 0.64, 116, 68),
     ];
 
     for (final rect in blocks) {
       final rRect = RRect.fromRectAndRadius(rect, const Radius.circular(20));
+
       canvas.drawRRect(rRect, fill);
       canvas.drawRRect(rRect, border);
     }
@@ -443,18 +467,20 @@ class _DeliveryMapPainter extends CustomPainter {
   void _drawLabels(Canvas canvas, Size size) {
     _drawLabel(
       canvas,
-      'North Ridge',
-      Offset(size.width * 0.18, size.height * 0.21),
-    );
-    _drawLabel(
-      canvas,
       'Food District',
-      Offset(size.width * 0.57, size.height * 0.39),
+      Offset(size.width * 0.18, size.height * 0.20),
     );
+
     _drawLabel(
       canvas,
-      'Central Loop',
-      Offset(size.width * 0.34, size.height * 0.70),
+      'Central Route',
+      Offset(size.width * 0.56, size.height * 0.36),
+    );
+
+    _drawLabel(
+      canvas,
+      'Home Zone',
+      Offset(size.width * 0.66, size.height * 0.57),
     );
   }
 
@@ -471,50 +497,36 @@ class _DeliveryMapPainter extends CustomPainter {
       ),
       textDirection: TextDirection.ltr,
     )..layout();
+
     painter.paint(canvas, offset);
   }
 
   void _drawDots(Canvas canvas, Size size) {
-    final paint = Paint()..color = Colors.white.withOpacity(0.06);
+    final paint = Paint()..color = Colors.white.withOpacity(0.055);
 
     for (double x = 22; x < size.width; x += 40) {
-      for (double y = 100; y < size.height - 110; y += 40) {
+      for (double y = 90; y < size.height - 70; y += 40) {
         canvas.drawCircle(Offset(x, y), 1, paint);
       }
     }
   }
 
-  void _drawAiScan(Canvas canvas, Size size) {
+  void _drawSearchPulse(Canvas canvas, Size size) {
     final center = Offset(size.width * 0.50, size.height * 0.38);
 
     for (int i = 0; i < 4; i++) {
-      final progress = (aiPulseProgress * 4 + i * 0.24) % 1;
+      final progress = (pulseProgress * 4 + i * 0.24) % 1;
       final radius = 44 + progress * 126;
 
       canvas.drawCircle(
         center,
         radius,
         Paint()
-          ..color = AppTheme.green.withOpacity((1 - progress) * 0.14)
+          ..color = AppTheme.green.withOpacity((1 - progress) * 0.12)
           ..style = PaintingStyle.stroke
           ..strokeWidth = 2.2,
       );
     }
-
-    canvas.drawCircle(
-      center,
-      170,
-      Paint()
-        ..shader = SweepGradient(
-          colors: [
-            Colors.transparent,
-            AppTheme.green.withOpacity(0.22),
-            Colors.transparent,
-          ],
-          stops: const [0.0, 0.58, 1.0],
-          transform: GradientRotation(aiPulseProgress * pi * 4),
-        ).createShader(Rect.fromCircle(center: center, radius: 170)),
-    );
   }
 
   void _drawRoute(Canvas canvas, Size size) {
@@ -523,98 +535,124 @@ class _DeliveryMapPainter extends CustomPainter {
     final activeLength = metric.length * routeProgress;
     final activePath = metric.extractPath(0, activeLength);
 
+    /// Bigger glow.
     canvas.drawPath(
       path,
       Paint()
-        ..color = AppTheme.green.withOpacity(0.14)
+        ..color = AppTheme.green.withOpacity(0.35)
         ..style = PaintingStyle.stroke
-        ..strokeWidth = 24
+        ..strokeWidth = 36
         ..strokeCap = StrokeCap.round
         ..strokeJoin = StrokeJoin.round
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 18),
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 24),
     );
 
+    /// Strong base route.
     canvas.drawPath(
       path,
       Paint()
-        ..color = Colors.white.withOpacity(0.16)
+        ..color = Colors.white.withOpacity(0.45)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 14
+        ..strokeCap = StrokeCap.round
+        ..strokeJoin = StrokeJoin.round,
+    );
+
+    /// Dark inner cut.
+    canvas.drawPath(
+      path,
+      Paint()
+        ..color = const Color(0xFF07100F).withOpacity(0.92)
         ..style = PaintingStyle.stroke
         ..strokeWidth = 8
         ..strokeCap = StrokeCap.round
         ..strokeJoin = StrokeJoin.round,
     );
 
+    /// Visible guide line even before movement starts.
     canvas.drawPath(
-      activePath,
+      path,
       Paint()
-        ..shader = const LinearGradient(
-          colors: [AppTheme.orange, AppTheme.green, AppTheme.cyan],
-        ).createShader(Offset.zero & size)
+        ..color = AppTheme.green.withOpacity(0.70)
         ..style = PaintingStyle.stroke
-        ..strokeWidth = 8
+        ..strokeWidth = 4.5
         ..strokeCap = StrokeCap.round
         ..strokeJoin = StrokeJoin.round,
     );
 
-    canvas.drawPath(
-      activePath,
-      Paint()
-        ..color = AppTheme.cyan.withOpacity(0.22)
+    if (activeLength > 0) {
+      canvas.drawPath(
+        activePath,
+        Paint()
+          ..color = AppTheme.cyan.withOpacity(0.42)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 26
+          ..strokeCap = StrokeCap.round
+          ..strokeJoin = StrokeJoin.round
+          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 16),
+      );
+
+      canvas.drawPath(
+        activePath,
+        Paint()
+          ..shader = const LinearGradient(
+            colors: [AppTheme.orange, AppTheme.green, AppTheme.cyan],
+          ).createShader(Offset.zero & size)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 10
+          ..strokeCap = StrokeCap.round
+          ..strokeJoin = StrokeJoin.round,
+      );
+
+      final dashPaint = Paint()
+        ..color = Colors.white.withOpacity(0.78)
         ..style = PaintingStyle.stroke
-        ..strokeWidth = 18
-        ..strokeCap = StrokeCap.round
-        ..strokeJoin = StrokeJoin.round
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 12),
-    );
+        ..strokeWidth = 2.4
+        ..strokeCap = StrokeCap.round;
 
-    final dashPaint = Paint()
-      ..color = Colors.white.withOpacity(0.56)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 2
-      ..strokeCap = StrokeCap.round;
-
-    for (double i = 0; i < activeLength; i += 34) {
-      final dash = metric.extractPath(i, min(i + 12, activeLength));
-      canvas.drawPath(dash, dashPaint);
+      for (double i = 0; i < activeLength; i += 34) {
+        final dash = metric.extractPath(i, min(i + 12, activeLength));
+        canvas.drawPath(dash, dashPaint);
+      }
     }
   }
 
   @override
   bool shouldRepaint(covariant _DeliveryMapPainter oldDelegate) {
     return oldDelegate.routeProgress != routeProgress ||
-        oldDelegate.aiPulseProgress != aiPulseProgress ||
-        oldDelegate.showRoute != showRoute;
+        oldDelegate.pulseProgress != pulseProgress ||
+        oldDelegate.isSearching != isSearching;
   }
 }
 
 class _TrackingTopCard extends StatelessWidget {
   final String title;
   final String subtitle;
-  final String badge;
   final int etaMinutes;
   final bool isDelivered;
+  final bool isSearching;
 
   const _TrackingTopCard({
     required this.title,
     required this.subtitle,
-    required this.badge,
     required this.etaMinutes,
     required this.isDelivered,
+    required this.isSearching,
   });
 
   @override
   Widget build(BuildContext context) {
     return GlassCard(
-      padding: const EdgeInsets.all(16),
-      borderRadius: BorderRadius.circular(30),
+      padding: const EdgeInsets.all(14),
+      borderRadius: BorderRadius.circular(28),
       child: Row(
         children: [
           AnimatedContainer(
             duration: const Duration(milliseconds: 360),
-            width: 54,
-            height: 54,
+            width: 48,
+            height: 48,
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(18),
+              borderRadius: BorderRadius.circular(16),
               gradient: LinearGradient(
                 colors: isDelivered
                     ? const [AppTheme.green, Color(0xFFB5FFE0)]
@@ -622,12 +660,16 @@ class _TrackingTopCard extends StatelessWidget {
               ),
             ),
             child: Icon(
-              isDelivered ? Icons.check_rounded : Icons.delivery_dining_rounded,
+              isDelivered
+                  ? Icons.check_rounded
+                  : isSearching
+                  ? Icons.search_rounded
+                  : Icons.delivery_dining_rounded,
               color: AppTheme.bg,
-              size: 27,
+              size: 24,
             ),
           ),
-          const SizedBox(width: 14),
+          const SizedBox(width: 13),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -641,13 +683,13 @@ class _TrackingTopCard extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
                       color: Colors.white,
-                      fontSize: 17,
+                      fontSize: 16.5,
                       fontWeight: FontWeight.w900,
                       letterSpacing: -0.35,
                     ),
                   ),
                 ),
-                const SizedBox(height: 5),
+                const SizedBox(height: 4),
                 AnimatedSwitcher(
                   duration: const Duration(milliseconds: 260),
                   child: Text(
@@ -657,8 +699,8 @@ class _TrackingTopCard extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
                       color: AppTheme.muted,
-                      fontSize: 12.5,
-                      height: 1.35,
+                      fontSize: 12,
+                      height: 1.3,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
@@ -666,38 +708,20 @@ class _TrackingTopCard extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(width: 12),
-          AnimatedSwitcher(
-            duration: const Duration(milliseconds: 260),
-            child: Container(
-              key: ValueKey(badge),
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.08),
-                borderRadius: BorderRadius.circular(18),
-                border: Border.all(color: Colors.white.withOpacity(0.08)),
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Text(
-                    'ETA',
-                    style: TextStyle(
-                      color: AppTheme.muted,
-                      fontSize: 10.5,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    isDelivered ? 'Now' : '$etaMinutes min',
-                    style: const TextStyle(
-                      color: AppTheme.green,
-                      fontSize: 12.5,
-                      fontWeight: FontWeight.w900,
-                    ),
-                  ),
-                ],
+          const SizedBox(width: 10),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 8),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.08),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: Colors.white.withOpacity(0.08)),
+            ),
+            child: Text(
+              isDelivered ? 'Done' : '$etaMinutes min',
+              style: const TextStyle(
+                color: AppTheme.green,
+                fontSize: 12,
+                fontWeight: FontWeight.w900,
               ),
             ),
           ),
@@ -707,20 +731,21 @@ class _TrackingTopCard extends StatelessWidget {
   }
 }
 
-class _AiSearchOrb extends StatefulWidget {
-  const _AiSearchOrb();
+class _RiderSearchPulse extends StatefulWidget {
+  const _RiderSearchPulse();
 
   @override
-  State<_AiSearchOrb> createState() => _AiSearchOrbState();
+  State<_RiderSearchPulse> createState() => _RiderSearchPulseState();
 }
 
-class _AiSearchOrbState extends State<_AiSearchOrb>
+class _RiderSearchPulseState extends State<_RiderSearchPulse>
     with SingleTickerProviderStateMixin {
   late final AnimationController controller;
 
   @override
   void initState() {
     super.initState();
+
     controller = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1700),
@@ -739,16 +764,16 @@ class _AiSearchOrbState extends State<_AiSearchOrb>
       animation: controller,
       builder: (_, __) {
         return CustomPaint(
-          size: const Size(220, 220),
-          painter: _AiOrbPainter(controller.value),
+          size: const Size(190, 190),
+          painter: _RiderPulsePainter(controller.value),
           child: const SizedBox(
-            width: 220,
-            height: 220,
+            width: 190,
+            height: 190,
             child: Center(
               child: Icon(
-                Icons.auto_awesome_rounded,
-                color: AppTheme.bg,
-                size: 36,
+                Icons.delivery_dining_rounded,
+                color: AppTheme.green,
+                size: 34,
               ),
             ),
           ),
@@ -758,39 +783,39 @@ class _AiSearchOrbState extends State<_AiSearchOrb>
   }
 }
 
-class _AiOrbPainter extends CustomPainter {
+class _RiderPulsePainter extends CustomPainter {
   final double progress;
 
-  _AiOrbPainter(this.progress);
+  _RiderPulsePainter(this.progress);
 
   @override
   void paint(Canvas canvas, Size size) {
     final center = size.center(Offset.zero);
 
-    canvas.drawCircle(
-      center,
-      40,
-      Paint()
-        ..shader = const LinearGradient(
-          colors: [AppTheme.orange, AppTheme.green, AppTheme.cyan],
-        ).createShader(Rect.fromCircle(center: center, radius: 40)),
-    );
-
     for (int i = 0; i < 4; i++) {
       final delayed = (progress + i * 0.22) % 1;
+
       canvas.drawCircle(
         center,
-        42 + delayed * 88,
+        30 + delayed * 78,
         Paint()
           ..color = AppTheme.green.withOpacity((1 - delayed) * 0.18)
           ..style = PaintingStyle.stroke
           ..strokeWidth = 2.2,
       );
     }
+
+    canvas.drawCircle(
+      center,
+      38,
+      Paint()
+        ..color = AppTheme.green.withOpacity(0.13)
+        ..style = PaintingStyle.fill,
+    );
   }
 
   @override
-  bool shouldRepaint(covariant _AiOrbPainter oldDelegate) {
+  bool shouldRepaint(covariant _RiderPulsePainter oldDelegate) {
     return oldDelegate.progress != progress;
   }
 }
@@ -811,8 +836,8 @@ class _MapMarker extends StatelessWidget {
     return Column(
       children: [
         Container(
-          width: 50,
-          height: 50,
+          width: 48,
+          height: 48,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             color: color.withOpacity(0.16),
@@ -825,9 +850,9 @@ class _MapMarker extends StatelessWidget {
               ),
             ],
           ),
-          child: Icon(icon, color: color, size: 22),
+          child: Icon(icon, color: color, size: 21),
         ),
-        const SizedBox(height: 7),
+        const SizedBox(height: 6),
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
           decoration: BoxDecoration(
@@ -839,7 +864,7 @@ class _MapMarker extends StatelessWidget {
             label,
             style: const TextStyle(
               color: Colors.white,
-              fontSize: 10.5,
+              fontSize: 10,
               fontWeight: FontWeight.w700,
             ),
           ),
@@ -855,8 +880,8 @@ class _ScooterMarker extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 70,
-      height: 70,
+      width: 68,
+      height: 68,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         boxShadow: [
@@ -879,7 +904,7 @@ class _ScooterPainter extends CustomPainter {
 
     canvas.drawCircle(
       center,
-      30,
+      29,
       Paint()
         ..color = AppTheme.green.withOpacity(0.12)
         ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 12),
@@ -890,8 +915,8 @@ class _ScooterPainter extends CustomPainter {
         colors: [AppTheme.orange, AppTheme.green],
       ).createShader(Offset.zero & size);
 
-    final shadowPaint = Paint()..color = AppTheme.bg.withOpacity(0.8);
-    final wheelPaint = Paint()..color = Colors.white.withOpacity(0.92);
+    final darkPaint = Paint()..color = AppTheme.bg.withOpacity(0.85);
+    final whitePaint = Paint()..color = Colors.white.withOpacity(0.92);
 
     canvas.drawRRect(
       RRect.fromRectAndRadius(
@@ -905,10 +930,11 @@ class _ScooterPainter extends CustomPainter {
       bodyPaint,
     );
 
-    canvas.drawCircle(Offset(center.dx - 14, center.dy + 16), 8, shadowPaint);
-    canvas.drawCircle(Offset(center.dx + 18, center.dy + 16), 8, shadowPaint);
-    canvas.drawCircle(Offset(center.dx - 14, center.dy + 16), 3, wheelPaint);
-    canvas.drawCircle(Offset(center.dx + 18, center.dy + 16), 3, wheelPaint);
+    canvas.drawCircle(Offset(center.dx - 14, center.dy + 16), 8, darkPaint);
+    canvas.drawCircle(Offset(center.dx + 18, center.dy + 16), 8, darkPaint);
+
+    canvas.drawCircle(Offset(center.dx - 14, center.dy + 16), 3, whitePaint);
+    canvas.drawCircle(Offset(center.dx + 18, center.dy + 16), 3, whitePaint);
 
     canvas.drawRRect(
       RRect.fromRectAndRadius(
@@ -928,7 +954,8 @@ class _ScooterPainter extends CustomPainter {
       Offset(center.dx + 30, center.dy - 18),
       handlePaint,
     );
-    canvas.drawCircle(Offset(center.dx + 32, center.dy - 19), 2.5, wheelPaint);
+
+    canvas.drawCircle(Offset(center.dx + 32, center.dy - 19), 2.5, whitePaint);
   }
 
   @override
@@ -940,199 +967,274 @@ class _DeliveryBottomSheet extends StatelessWidget {
   final int activeStep;
   final bool isDelivered;
   final int etaMinutes;
-  final bool isMoving;
+  final VoidCallback onDone;
 
   const _DeliveryBottomSheet({
     required this.food,
     required this.activeStep,
     required this.isDelivered,
     required this.etaMinutes,
-    required this.isMoving,
+    required this.onDone,
   });
 
   @override
   Widget build(BuildContext context) {
-    return GlassCard(
-      padding: const EdgeInsets.all(16),
-      borderRadius: BorderRadius.circular(32),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
+    return ClipRRect(
+      borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+        child: Container(
+          padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+          decoration: BoxDecoration(
+            color: const Color(0xDD07100F),
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+            border: Border.all(color: Colors.white.withOpacity(0.09)),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      isDelivered ? 'Arrived!' : 'Out for delivery',
-                      style: Theme.of(context).textTheme.titleLarge,
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
+              Container(
+                width: 42,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.18),
+                  borderRadius: BorderRadius.circular(100),
+                ),
+              ),
+
+              const SizedBox(height: 13),
+
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
                       isDelivered
-                          ? 'Enjoy your fresh meal'
-                          : '${food.restaurant} · Est. $etaMinutes mins',
+                          ? 'Delivered successfully'
+                          : 'Out for delivery',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
-                        color: AppTheme.muted,
-                        fontSize: 12.5,
+                        color: Colors.white,
+                        fontSize: 17,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: -0.4,
                       ),
                     ),
-                  ],
-                ),
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 8,
-                ),
-                decoration: BoxDecoration(
-                  color: AppTheme.green.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Text(
-                  isDelivered ? 'Done' : '$etaMinutes min',
-                  style: const TextStyle(
-                    color: AppTheme.green,
-                    fontWeight: FontWeight.w900,
                   ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 20),
-          PremiumSurface(
-            padding: const EdgeInsets.all(12),
-            borderRadius: BorderRadius.circular(24),
-            child: Row(
-              children: [
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(16),
-                  child: Image.network(
-                    'https://images.unsplash.com/photo-1599566150163-29194dcaad36?q=80&w=2574&auto=format&fit=crop',
-                    width: 44,
-                    height: 44,
-                    fit: BoxFit.cover,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                const Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Hamza (Rider)',
+                  const SizedBox(width: 10),
+                  GestureDetector(
+                    onTap: isDelivered ? onDone : null,
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 250),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 13,
+                        vertical: 8,
+                      ),
+                      decoration: BoxDecoration(
+                        color: isDelivered
+                            ? AppTheme.green
+                            : AppTheme.green.withOpacity(0.10),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        isDelivered ? 'Done' : '$etaMinutes min',
                         style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 14,
-                          fontWeight: FontWeight.w700,
+                          color: isDelivered ? AppTheme.bg : AppTheme.green,
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w900,
                         ),
                       ),
-                      Text(
-                        '4.9 rating · Pro rider',
-                        style: TextStyle(color: AppTheme.muted, fontSize: 11),
-                      ),
-                    ],
+                    ),
                   ),
-                ),
-                Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: Colors.white.withOpacity(0.06),
+                ],
+              ),
+
+              const SizedBox(height: 12),
+
+              Row(
+                children: [
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(15),
+                    child: Image.network(
+                      'https://images.unsplash.com/photo-1599566150163-29194dcaad36?q=80&w=400&auto=format&fit=crop',
+                      width: 44,
+                      height: 44,
+                      fit: BoxFit.cover,
+                    ),
                   ),
-                  child: const Icon(
-                    Icons.call_rounded,
+                  const SizedBox(width: 11),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Hamza Khan',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 14.5,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          isDelivered
+                              ? 'Order delivered to your location'
+                              : 'Honda 125 · 4.9 rating · $etaMinutes min away',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            color: AppTheme.muted,
+                            fontSize: 11.5,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  const _CircleAction(
+                    icon: Icons.call_rounded,
                     color: AppTheme.green,
-                    size: 18,
                   ),
-                ),
-                const SizedBox(width: 8),
-                Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: Colors.white.withOpacity(0.06),
-                  ),
-                  child: const Icon(
-                    Icons.chat_bubble_rounded,
+                  const SizedBox(width: 7),
+                  const _CircleAction(
+                    icon: Icons.chat_rounded,
                     color: AppTheme.cyan,
-                    size: 18,
                   ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 24),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              _StepIndicator(
-                label: 'Order',
-                icon: Icons.check_circle_rounded,
-                active: activeStep >= 1,
+                ],
               ),
-              _StepIndicator(
-                label: 'Prep',
-                icon: Icons.soup_kitchen_rounded,
-                active: activeStep >= 2,
-              ),
-              _StepIndicator(
-                label: 'Rider',
-                icon: Icons.delivery_dining_rounded,
-                active: activeStep >= 3,
-              ),
-              _StepIndicator(
-                label: 'Home',
-                icon: Icons.home_rounded,
-                active: activeStep >= 5,
-              ),
+
+              const SizedBox(height: 16),
+
+              _ConnectedStepIndicator(activeStep: activeStep),
             ],
           ),
-        ],
+        ),
       ),
     );
   }
 }
 
-class _StepIndicator extends StatelessWidget {
-  final String label;
+class _CircleAction extends StatelessWidget {
   final IconData icon;
-  final bool active;
+  final Color color;
 
-  const _StepIndicator({
-    required this.label,
-    required this.icon,
-    required this.active,
-  });
+  const _CircleAction({required this.icon, required this.color});
 
   @override
   Widget build(BuildContext context) {
-    final color = active ? AppTheme.green : Colors.white.withOpacity(0.08);
-    return Column(
-      children: [
-        Container(
-          width: 48,
-          height: 48,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: color.withOpacity(0.1),
-            border: Border.all(color: color.withOpacity(0.3)),
-          ),
-          child: Icon(icon, color: color, size: 22),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          label,
-          style: TextStyle(
-            color: active ? Colors.white : AppTheme.muted,
-            fontSize: 11,
-            fontWeight: active ? FontWeight.bold : FontWeight.normal,
-          ),
-        ),
-      ],
+    return Container(
+      width: 38,
+      height: 38,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: Colors.white.withOpacity(0.06),
+        border: Border.all(color: Colors.white.withOpacity(0.08)),
+      ),
+      child: Icon(icon, color: color, size: 17),
     );
   }
+}
+
+class _ConnectedStepIndicator extends StatelessWidget {
+  final int activeStep;
+
+  const _ConnectedStepIndicator({required this.activeStep});
+
+  @override
+  Widget build(BuildContext context) {
+    final steps = [
+      _StepData('Order', Icons.receipt_long_rounded),
+      _StepData('Prep', Icons.restaurant_rounded),
+      _StepData('Pickup', Icons.delivery_dining_rounded),
+      _StepData('Home', Icons.home_rounded),
+    ];
+
+    return Row(
+      children: List.generate(steps.length, (index) {
+        final isActive = index < activeStep;
+        final isCurrent = index == activeStep - 1;
+
+        return Expanded(
+          child: Row(
+            children: [
+              Expanded(
+                child: Column(
+                  children: [
+                    AnimatedContainer(
+                      duration: const Duration(milliseconds: 300),
+                      width: isCurrent ? 36 : 32,
+                      height: isCurrent ? 36 : 32,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: isActive
+                            ? AppTheme.green
+                            : Colors.white.withOpacity(0.07),
+                        border: Border.all(
+                          color: isActive
+                              ? AppTheme.green
+                              : Colors.white.withOpacity(0.12),
+                        ),
+                        boxShadow: isCurrent
+                            ? [
+                                BoxShadow(
+                                  color: AppTheme.green.withOpacity(0.28),
+                                  blurRadius: 16,
+                                  spreadRadius: 1,
+                                ),
+                              ]
+                            : [],
+                      ),
+                      child: Icon(
+                        steps[index].icon,
+                        size: 16,
+                        color: isActive
+                            ? AppTheme.bg
+                            : Colors.white.withOpacity(0.36),
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      steps[index].label,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: isActive ? Colors.white : AppTheme.muted,
+                        fontSize: 10,
+                        fontWeight: isActive
+                            ? FontWeight.w800
+                            : FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              if (index != steps.length - 1)
+                Expanded(
+                  child: Container(
+                    height: 3,
+                    margin: const EdgeInsets.only(bottom: 23),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(99),
+                      color: index < activeStep - 1
+                          ? AppTheme.green
+                          : Colors.white.withOpacity(0.10),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        );
+      }),
+    );
+  }
+}
+
+class _StepData {
+  final String label;
+  final IconData icon;
+
+  const _StepData(this.label, this.icon);
 }
