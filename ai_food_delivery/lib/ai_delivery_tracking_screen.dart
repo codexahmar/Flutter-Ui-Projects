@@ -1,11 +1,9 @@
 import 'dart:math';
-import 'dart:ui';
 
 import 'package:flutter/material.dart';
 
 import 'app_theme.dart';
 import 'food_item.dart';
-import 'shared_widgets.dart';
 
 class AiDeliveryTrackingScreen extends StatefulWidget {
   final FoodItem food;
@@ -21,14 +19,13 @@ class _AiDeliveryTrackingScreenState extends State<AiDeliveryTrackingScreen>
     with SingleTickerProviderStateMixin {
   late final AnimationController _controller;
 
-  /// Route is moved upward so the bottom sheet does not cover it.
   final List<Offset> routePoints = const [
-    Offset(0.16, 0.28),
-    Offset(0.30, 0.24),
-    Offset(0.46, 0.32),
-    Offset(0.56, 0.42),
+    Offset(0.16, 0.38),
+    Offset(0.30, 0.31),
+    Offset(0.46, 0.39),
+    Offset(0.56, 0.50),
     Offset(0.70, 0.45),
-    Offset(0.84, 0.54),
+    Offset(0.84, 0.56),
   ];
 
   @override
@@ -38,7 +35,7 @@ class _AiDeliveryTrackingScreenState extends State<AiDeliveryTrackingScreen>
     _controller = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 18),
-    )..forward(); // Runs once only. No repeat.
+    )..forward();
   }
 
   @override
@@ -78,21 +75,21 @@ class _AiDeliveryTrackingScreenState extends State<AiDeliveryTrackingScreen>
   }
 
   String get title {
-    if (isSearching) return 'Finding nearby rider';
+    if (isSearching) return 'Finding rider';
     if (isAccepted) return 'Order accepted';
-    if (isPreparing) return 'Preparing your meal';
+    if (isPreparing) return 'Preparing meal';
     if (isRiderAssigned) return 'Rider assigned';
     if (isMoving) return 'Out for delivery';
     return 'Delivered';
   }
 
   String get subtitle {
-    if (isSearching) return 'Checking nearby riders and fastest route.';
-    if (isAccepted) return '${widget.food.restaurant} confirmed your order';
-    if (isPreparing) return 'Your meal is being prepared fresh';
+    if (isSearching) return 'Checking fastest route';
+    if (isAccepted) return '${widget.food.restaurant} confirmed';
+    if (isPreparing) return 'Fresh preparation in progress';
     if (isRiderAssigned) return 'Hamza picked up your order';
-    if (isMoving) return '$etaMinutes min away · Live tracking';
-    return 'Your order has arrived.';
+    if (isMoving) return '$etaMinutes min away';
+    return 'Your order has arrived';
   }
 
   Path _buildRoutePath(Size size) {
@@ -108,12 +105,12 @@ class _AiDeliveryTrackingScreenState extends State<AiDeliveryTrackingScreen>
 
       final controlOne = Offset(
         previous.dx + (current.dx - previous.dx) * 0.42,
-        previous.dy - 20,
+        previous.dy - 18,
       );
 
       final controlTwo = Offset(
         previous.dx + (current.dx - previous.dx) * 0.58,
-        current.dy + 20,
+        current.dy + 18,
       );
 
       path.cubicTo(
@@ -143,12 +140,11 @@ class _AiDeliveryTrackingScreenState extends State<AiDeliveryTrackingScreen>
     final food = widget.food;
 
     return Scaffold(
+      backgroundColor: AppTheme.bg,
       body: LayoutBuilder(
         builder: (context, constraints) {
           final size = Size(constraints.maxWidth, constraints.maxHeight);
-
-          /// Smaller bottom sheet so map + route stay visible.
-          final bottomSheetHeight = min(255.0, size.height * 0.31);
+          final bottomSheetHeight = min(198.0, size.height * 0.23);
 
           return AnimatedBuilder(
             animation: _controller,
@@ -156,6 +152,7 @@ class _AiDeliveryTrackingScreenState extends State<AiDeliveryTrackingScreen>
               final scooterPosition = _scooterPosition(size);
 
               return Stack(
+                clipBehavior: Clip.none,
                 children: [
                   Positioned.fill(
                     child: CustomPaint(
@@ -168,53 +165,31 @@ class _AiDeliveryTrackingScreenState extends State<AiDeliveryTrackingScreen>
                     ),
                   ),
 
-                  /// Only slight readability overlays. Not covering the map heavily.
                   Positioned(
-                    left: 0,
-                    right: 0,
-                    top: 0,
-                    height: 150,
-                    child: IgnorePointer(
-                      child: Container(
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.topCenter,
-                            end: Alignment.bottomCenter,
-                            colors: [
-                              Colors.black.withOpacity(0.48),
-                              Colors.transparent,
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-
-                  SafeArea(
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(20, 14, 20, 0),
-                      child: _TrackingTopCard(
-                        title: title,
-                        subtitle: subtitle,
-                        etaMinutes: etaMinutes,
-                        isDelivered: isDelivered,
-                        isSearching: isSearching,
-                      ),
+                    top: MediaQuery.of(context).padding.top + 58,
+                    left: 22,
+                    right: 22,
+                    child: _FloatingStatusChip(
+                      title: title,
+                      subtitle: subtitle,
+                      etaMinutes: etaMinutes,
+                      isDelivered: isDelivered,
+                      isSearching: isSearching,
                     ),
                   ),
 
                   if (isSearching)
                     Positioned(
-                      top: size.height * 0.32,
+                      top: size.height * 0.36,
                       left: 0,
                       right: 0,
                       child: const Center(child: _RiderSearchPulse()),
                     ),
 
                   Positioned(
-                    left: size.width * routePoints.first.dx - 26,
-                    top: size.height * routePoints.first.dy - 28,
-                    child: const _MapMarker(
+                    left: size.width * routePoints.first.dx - 22,
+                    top: size.height * routePoints.first.dy - 24,
+                    child: const _SimpleMapMarker(
                       icon: Icons.restaurant_rounded,
                       label: 'Restaurant',
                       color: AppTheme.orange,
@@ -222,28 +197,29 @@ class _AiDeliveryTrackingScreenState extends State<AiDeliveryTrackingScreen>
                   ),
 
                   Positioned(
-                    left: size.width * routePoints.last.dx - 26,
-                    top: size.height * routePoints.last.dy - 28,
-                    child: const _MapMarker(
+                    left: size.width * routePoints.last.dx - 22,
+                    top: size.height * routePoints.last.dy - 24,
+                    child: const _SimpleMapMarker(
                       icon: Icons.home_rounded,
                       label: 'Home',
                       color: AppTheme.green,
                     ),
                   ),
 
-                  if (!isSearching && !isAccepted && !isPreparing)
+                  if (!isSearching &&
+                      !isAccepted &&
+                      !isPreparing &&
+                      !isDelivered)
                     Positioned(
-                      left: scooterPosition.dx - 34,
-                      top: scooterPosition.dy - 34,
-
-                      /// No rotation. Scooter only moves on the route.
+                      left: scooterPosition.dx - 32,
+                      top: scooterPosition.dy - 32,
                       child: const _ScooterMarker(),
                     ),
 
                   Positioned(
-                    left: 18,
-                    right: 18,
-                    bottom: 18,
+                    left: 16,
+                    right: 16,
+                    bottom: 16,
                     child: SizedBox(
                       height: bottomSheetHeight,
                       child: _DeliveryBottomSheet(
@@ -285,8 +261,6 @@ class _DeliveryMapPainter extends CustomPainter {
     _drawBlocks(canvas, size);
     _drawLabels(canvas, size);
     _drawDots(canvas, size);
-
-    /// Route is drawn after roads and blocks, so it stays visible.
     _drawRoute(canvas, size);
 
     if (isSearching) {
@@ -307,12 +281,12 @@ class _DeliveryMapPainter extends CustomPainter {
 
       final controlOne = Offset(
         previous.dx + (current.dx - previous.dx) * 0.42,
-        previous.dy - 20,
+        previous.dy - 18,
       );
 
       final controlTwo = Offset(
         previous.dx + (current.dx - previous.dx) * 0.58,
-        current.dy + 20,
+        current.dy + 18,
       );
 
       path.cubicTo(
@@ -338,40 +312,55 @@ class _DeliveryMapPainter extends CustomPainter {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            AppTheme.bg,
-            AppTheme.bgAlt,
-            Color(0xFF10161F),
-            Color(0xFF070B10),
+            Color(0xFF05090F),
+            Color(0xFF071712),
+            Color(0xFF0A1018),
+            Color(0xFF05080D),
           ],
         ).createShader(rect),
     );
 
     canvas.drawCircle(
-      Offset(size.width * 0.82, size.height * 0.14),
-      280,
+      Offset(size.width * 0.82, size.height * 0.16),
+      300,
       Paint()
         ..shader =
             RadialGradient(
-              colors: [AppTheme.green.withOpacity(0.17), Colors.transparent],
+              colors: [AppTheme.green.withOpacity(0.24), Colors.transparent],
             ).createShader(
               Rect.fromCircle(
-                center: Offset(size.width * 0.82, size.height * 0.14),
-                radius: 280,
+                center: Offset(size.width * 0.82, size.height * 0.16),
+                radius: 300,
               ),
             ),
     );
 
     canvas.drawCircle(
-      Offset(size.width * 0.16, size.height * 0.34),
-      240,
+      Offset(size.width * 0.20, size.height * 0.40),
+      270,
       Paint()
         ..shader =
             RadialGradient(
-              colors: [AppTheme.orange.withOpacity(0.12), Colors.transparent],
+              colors: [AppTheme.orange.withOpacity(0.18), Colors.transparent],
             ).createShader(
               Rect.fromCircle(
-                center: Offset(size.width * 0.16, size.height * 0.34),
-                radius: 240,
+                center: Offset(size.width * 0.20, size.height * 0.40),
+                radius: 270,
+              ),
+            ),
+    );
+
+    canvas.drawCircle(
+      Offset(size.width * 0.67, size.height * 0.58),
+      250,
+      Paint()
+        ..shader =
+            RadialGradient(
+              colors: [AppTheme.cyan.withOpacity(0.16), Colors.transparent],
+            ).createShader(
+              Rect.fromCircle(
+                center: Offset(size.width * 0.67, size.height * 0.58),
+                radius: 250,
               ),
             ),
     );
@@ -379,85 +368,94 @@ class _DeliveryMapPainter extends CustomPainter {
 
   void _drawRoads(Canvas canvas, Size size) {
     final roadGlow = Paint()
-      ..color = Colors.white.withOpacity(0.018)
+      ..color = Colors.white.withOpacity(0.06)
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 54
+      ..strokeWidth = 62
       ..strokeCap = StrokeCap.round;
 
     final roadBase = Paint()
-      ..color = Colors.white.withOpacity(0.045)
+      ..color = Colors.white.withOpacity(0.14)
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 22
+      ..strokeWidth = 28
       ..strokeCap = StrokeCap.round;
 
-    final roadThin = Paint()
-      ..color = Colors.white.withOpacity(0.03)
+    final roadInner = Paint()
+      ..color = const Color(0xFF101B21).withOpacity(0.95)
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 10
+      ..strokeWidth = 17
       ..strokeCap = StrokeCap.round;
 
     final roadA = Path()
-      ..moveTo(-40, size.height * 0.25)
+      ..moveTo(-50, size.height * 0.31)
       ..cubicTo(
         size.width * 0.20,
-        size.height * 0.14,
-        size.width * 0.48,
-        size.height * 0.40,
-        size.width + 40,
-        size.height * 0.24,
+        size.height * 0.20,
+        size.width * 0.52,
+        size.height * 0.43,
+        size.width + 50,
+        size.height * 0.29,
       );
 
     final roadB = Path()
-      ..moveTo(size.width * 0.10, -40)
+      ..moveTo(size.width * 0.11, -50)
       ..cubicTo(
-        size.width * 0.12,
-        size.height * 0.24,
-        size.width * 0.30,
-        size.height * 0.54,
+        size.width * 0.14,
+        size.height * 0.26,
+        size.width * 0.32,
+        size.height * 0.56,
         size.width * 0.18,
-        size.height + 40,
+        size.height + 50,
       );
 
     final roadC = Path()
-      ..moveTo(size.width + 30, size.height * 0.58)
+      ..moveTo(size.width + 50, size.height * 0.64)
       ..cubicTo(
-        size.width * 0.74,
-        size.height * 0.48,
-        size.width * 0.48,
-        size.height * 0.66,
-        -30,
-        size.height * 0.67,
+        size.width * 0.72,
+        size.height * 0.50,
+        size.width * 0.46,
+        size.height * 0.69,
+        -50,
+        size.height * 0.71,
       );
 
-    canvas.drawPath(roadA, roadGlow);
-    canvas.drawPath(roadB, roadGlow);
-    canvas.drawPath(roadC, roadGlow);
+    final roadD = Path()
+      ..moveTo(-50, size.height * 0.80)
+      ..cubicTo(
+        size.width * 0.25,
+        size.height * 0.72,
+        size.width * 0.58,
+        size.height * 0.76,
+        size.width + 50,
+        size.height * 0.68,
+      );
 
-    canvas.drawPath(roadA, roadBase);
-    canvas.drawPath(roadB, roadThin);
-    canvas.drawPath(roadC, roadBase);
+    for (final road in [roadA, roadB, roadC, roadD]) {
+      canvas.drawPath(road, roadGlow);
+      canvas.drawPath(road, roadBase);
+      canvas.drawPath(road, roadInner);
+    }
   }
 
   void _drawBlocks(Canvas canvas, Size size) {
-    final fill = Paint()..color = Colors.white.withOpacity(0.03);
+    final fill = Paint()..color = Colors.white.withOpacity(0.075);
 
     final border = Paint()
-      ..color = Colors.white.withOpacity(0.04)
+      ..color = Colors.white.withOpacity(0.11)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1;
 
     final blocks = [
-      Rect.fromLTWH(size.width * 0.08, size.height * 0.10, 88, 62),
-      Rect.fromLTWH(size.width * 0.25, size.height * 0.12, 126, 74),
-      Rect.fromLTWH(size.width * 0.58, size.height * 0.11, 126, 78),
-      Rect.fromLTWH(size.width * 0.14, size.height * 0.46, 118, 82),
-      Rect.fromLTWH(size.width * 0.56, size.height * 0.40, 132, 100),
-      Rect.fromLTWH(size.width * 0.10, size.height * 0.68, 124, 70),
-      Rect.fromLTWH(size.width * 0.62, size.height * 0.64, 116, 68),
+      Rect.fromLTWH(size.width * 0.06, size.height * 0.12, 86, 58),
+      Rect.fromLTWH(size.width * 0.30, size.height * 0.13, 120, 72),
+      Rect.fromLTWH(size.width * 0.62, size.height * 0.12, 112, 74),
+      Rect.fromLTWH(size.width * 0.08, size.height * 0.50, 126, 80),
+      Rect.fromLTWH(size.width * 0.55, size.height * 0.35, 132, 96),
+      Rect.fromLTWH(size.width * 0.12, size.height * 0.68, 122, 68),
+      Rect.fromLTWH(size.width * 0.61, size.height * 0.67, 118, 68),
     ];
 
     for (final rect in blocks) {
-      final rRect = RRect.fromRectAndRadius(rect, const Radius.circular(20));
+      final rRect = RRect.fromRectAndRadius(rect, const Radius.circular(22));
 
       canvas.drawRRect(rRect, fill);
       canvas.drawRRect(rRect, border);
@@ -468,19 +466,19 @@ class _DeliveryMapPainter extends CustomPainter {
     _drawLabel(
       canvas,
       'Food District',
-      Offset(size.width * 0.18, size.height * 0.20),
+      Offset(size.width * 0.18, size.height * 0.27),
     );
 
     _drawLabel(
       canvas,
       'Central Route',
-      Offset(size.width * 0.56, size.height * 0.36),
+      Offset(size.width * 0.54, size.height * 0.36),
     );
 
     _drawLabel(
       canvas,
       'Home Zone',
-      Offset(size.width * 0.66, size.height * 0.57),
+      Offset(size.width * 0.64, size.height * 0.62),
     );
   }
 
@@ -489,9 +487,9 @@ class _DeliveryMapPainter extends CustomPainter {
       text: TextSpan(
         text: text,
         style: TextStyle(
-          color: Colors.white.withOpacity(0.12),
+          color: Colors.white.withOpacity(0.24),
           fontSize: 12,
-          fontWeight: FontWeight.w700,
+          fontWeight: FontWeight.w800,
           letterSpacing: 0.2,
         ),
       ),
@@ -502,10 +500,10 @@ class _DeliveryMapPainter extends CustomPainter {
   }
 
   void _drawDots(Canvas canvas, Size size) {
-    final paint = Paint()..color = Colors.white.withOpacity(0.055);
+    final paint = Paint()..color = Colors.white.withOpacity(0.12);
 
     for (double x = 22; x < size.width; x += 40) {
-      for (double y = 90; y < size.height - 70; y += 40) {
+      for (double y = 90; y < size.height - 55; y += 40) {
         canvas.drawCircle(Offset(x, y), 1, paint);
       }
     }
@@ -522,7 +520,7 @@ class _DeliveryMapPainter extends CustomPainter {
         center,
         radius,
         Paint()
-          ..color = AppTheme.green.withOpacity((1 - progress) * 0.12)
+          ..color = AppTheme.green.withOpacity((1 - progress) * 0.14)
           ..style = PaintingStyle.stroke
           ..strokeWidth = 2.2,
       );
@@ -535,47 +533,43 @@ class _DeliveryMapPainter extends CustomPainter {
     final activeLength = metric.length * routeProgress;
     final activePath = metric.extractPath(0, activeLength);
 
-    /// Bigger glow.
     canvas.drawPath(
       path,
       Paint()
-        ..color = AppTheme.green.withOpacity(0.35)
+        ..color = AppTheme.green.withOpacity(0.62)
         ..style = PaintingStyle.stroke
-        ..strokeWidth = 36
+        ..strokeWidth = 44
         ..strokeCap = StrokeCap.round
         ..strokeJoin = StrokeJoin.round
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 24),
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 28),
     );
 
-    /// Strong base route.
     canvas.drawPath(
       path,
       Paint()
-        ..color = Colors.white.withOpacity(0.45)
+        ..color = Colors.white.withOpacity(0.82)
         ..style = PaintingStyle.stroke
-        ..strokeWidth = 14
+        ..strokeWidth = 17
         ..strokeCap = StrokeCap.round
         ..strokeJoin = StrokeJoin.round,
     );
 
-    /// Dark inner cut.
     canvas.drawPath(
       path,
       Paint()
-        ..color = const Color(0xFF07100F).withOpacity(0.92)
+        ..color = const Color(0xFF06100E)
         ..style = PaintingStyle.stroke
-        ..strokeWidth = 8
+        ..strokeWidth = 9.5
         ..strokeCap = StrokeCap.round
         ..strokeJoin = StrokeJoin.round,
     );
 
-    /// Visible guide line even before movement starts.
     canvas.drawPath(
       path,
       Paint()
-        ..color = AppTheme.green.withOpacity(0.70)
+        ..color = AppTheme.green.withOpacity(1)
         ..style = PaintingStyle.stroke
-        ..strokeWidth = 4.5
+        ..strokeWidth = 5.8
         ..strokeCap = StrokeCap.round
         ..strokeJoin = StrokeJoin.round,
     );
@@ -584,12 +578,12 @@ class _DeliveryMapPainter extends CustomPainter {
       canvas.drawPath(
         activePath,
         Paint()
-          ..color = AppTheme.cyan.withOpacity(0.42)
+          ..color = AppTheme.cyan.withOpacity(0.58)
           ..style = PaintingStyle.stroke
-          ..strokeWidth = 26
+          ..strokeWidth = 32
           ..strokeCap = StrokeCap.round
           ..strokeJoin = StrokeJoin.round
-          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 16),
+          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 18),
       );
 
       canvas.drawPath(
@@ -599,15 +593,15 @@ class _DeliveryMapPainter extends CustomPainter {
             colors: [AppTheme.orange, AppTheme.green, AppTheme.cyan],
           ).createShader(Offset.zero & size)
           ..style = PaintingStyle.stroke
-          ..strokeWidth = 10
+          ..strokeWidth = 11.5
           ..strokeCap = StrokeCap.round
           ..strokeJoin = StrokeJoin.round,
       );
 
       final dashPaint = Paint()
-        ..color = Colors.white.withOpacity(0.78)
+        ..color = Colors.white.withOpacity(0.95)
         ..style = PaintingStyle.stroke
-        ..strokeWidth = 2.4
+        ..strokeWidth = 2.5
         ..strokeCap = StrokeCap.round;
 
       for (double i = 0; i < activeLength; i += 34) {
@@ -625,14 +619,14 @@ class _DeliveryMapPainter extends CustomPainter {
   }
 }
 
-class _TrackingTopCard extends StatelessWidget {
+class _FloatingStatusChip extends StatelessWidget {
   final String title;
   final String subtitle;
   final int etaMinutes;
   final bool isDelivered;
   final bool isSearching;
 
-  const _TrackingTopCard({
+  const _FloatingStatusChip({
     required this.title,
     required this.subtitle,
     required this.etaMinutes,
@@ -642,90 +636,83 @@ class _TrackingTopCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GlassCard(
-      padding: const EdgeInsets.all(14),
-      borderRadius: BorderRadius.circular(28),
-      child: Row(
-        children: [
-          AnimatedContainer(
-            duration: const Duration(milliseconds: 360),
-            width: 48,
-            height: 48,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(16),
-              gradient: LinearGradient(
-                colors: isDelivered
-                    ? const [AppTheme.green, Color(0xFFB5FFE0)]
-                    : const [AppTheme.orange, AppTheme.green],
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: Container(
+        constraints: const BoxConstraints(maxWidth: 255),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        decoration: BoxDecoration(
+          color: const Color(0xF0061115),
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: Colors.white.withOpacity(0.10)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.24),
+              blurRadius: 18,
+              offset: const Offset(0, 10),
+            ),
+          ],
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 39,
+              height: 39,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(14),
+                gradient: const LinearGradient(
+                  colors: [AppTheme.orange, AppTheme.green],
+                ),
+              ),
+              child: Icon(
+                isSearching
+                    ? Icons.search_rounded
+                    : Icons.delivery_dining_rounded,
+                color: AppTheme.bg,
+                size: 21,
               ),
             ),
-            child: Icon(
-              isDelivered
-                  ? Icons.check_rounded
-                  : isSearching
-                  ? Icons.search_rounded
-                  : Icons.delivery_dining_rounded,
-              color: AppTheme.bg,
-              size: 24,
-            ),
-          ),
-          const SizedBox(width: 13),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 260),
-                  child: Text(
-                    title,
-                    key: ValueKey(title),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 16.5,
-                      fontWeight: FontWeight.w900,
-                      letterSpacing: -0.35,
+            const SizedBox(width: 11),
+            Flexible(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 240),
+                    child: Text(
+                      title,
+                      key: ValueKey(title),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 15.5,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: -0.3,
+                      ),
                     ),
                   ),
-                ),
-                const SizedBox(height: 4),
-                AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 260),
-                  child: Text(
-                    subtitle,
-                    key: ValueKey(subtitle),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      color: AppTheme.muted,
-                      fontSize: 12,
-                      height: 1.3,
-                      fontWeight: FontWeight.w500,
+                  const SizedBox(height: 2),
+                  AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 240),
+                    child: Text(
+                      subtitle,
+                      key: ValueKey(subtitle),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: AppTheme.muted,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
                   ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 10),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 8),
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.08),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: Colors.white.withOpacity(0.08)),
-            ),
-            child: Text(
-              isDelivered ? 'Done' : '$etaMinutes min',
-              style: const TextStyle(
-                color: AppTheme.green,
-                fontSize: 12,
-                fontWeight: FontWeight.w900,
+                ],
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -764,16 +751,16 @@ class _RiderSearchPulseState extends State<_RiderSearchPulse>
       animation: controller,
       builder: (_, __) {
         return CustomPaint(
-          size: const Size(190, 190),
+          size: const Size(170, 170),
           painter: _RiderPulsePainter(controller.value),
           child: const SizedBox(
-            width: 190,
-            height: 190,
+            width: 170,
+            height: 170,
             child: Center(
               child: Icon(
                 Icons.delivery_dining_rounded,
                 color: AppTheme.green,
-                size: 34,
+                size: 30,
               ),
             ),
           ),
@@ -797,9 +784,9 @@ class _RiderPulsePainter extends CustomPainter {
 
       canvas.drawCircle(
         center,
-        30 + delayed * 78,
+        30 + delayed * 75,
         Paint()
-          ..color = AppTheme.green.withOpacity((1 - delayed) * 0.18)
+          ..color = AppTheme.green.withOpacity((1 - delayed) * 0.20)
           ..style = PaintingStyle.stroke
           ..strokeWidth = 2.2,
       );
@@ -807,9 +794,9 @@ class _RiderPulsePainter extends CustomPainter {
 
     canvas.drawCircle(
       center,
-      38,
+      36,
       Paint()
-        ..color = AppTheme.green.withOpacity(0.13)
+        ..color = AppTheme.green.withOpacity(0.14)
         ..style = PaintingStyle.fill,
     );
   }
@@ -820,12 +807,12 @@ class _RiderPulsePainter extends CustomPainter {
   }
 }
 
-class _MapMarker extends StatelessWidget {
+class _SimpleMapMarker extends StatelessWidget {
   final IconData icon;
   final String label;
   final Color color;
 
-  const _MapMarker({
+  const _SimpleMapMarker({
     required this.icon,
     required this.label,
     required this.color,
@@ -836,36 +823,36 @@ class _MapMarker extends StatelessWidget {
     return Column(
       children: [
         Container(
-          width: 48,
-          height: 48,
+          width: 44,
+          height: 44,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            color: color.withOpacity(0.16),
-            border: Border.all(color: color.withOpacity(0.78), width: 1.5),
+            color: color.withOpacity(0.18),
+            border: Border.all(color: color.withOpacity(0.86), width: 1.5),
             boxShadow: [
               BoxShadow(
-                color: color.withOpacity(0.30),
+                color: color.withOpacity(0.38),
                 blurRadius: 22,
                 spreadRadius: 1,
               ),
             ],
           ),
-          child: Icon(icon, color: color, size: 21),
+          child: Icon(icon, color: color, size: 20),
         ),
-        const SizedBox(height: 6),
+        const SizedBox(height: 5),
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+          padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
           decoration: BoxDecoration(
-            color: AppTheme.glass,
+            color: const Color(0xF0061115),
             borderRadius: BorderRadius.circular(999),
-            border: Border.all(color: Colors.white.withOpacity(0.08)),
+            border: Border.all(color: Colors.white.withOpacity(0.10)),
           ),
           child: Text(
             label,
             style: const TextStyle(
               color: Colors.white,
-              fontSize: 10,
-              fontWeight: FontWeight.w700,
+              fontSize: 9.5,
+              fontWeight: FontWeight.w800,
             ),
           ),
         ),
@@ -880,13 +867,13 @@ class _ScooterMarker extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 68,
-      height: 68,
+      width: 64,
+      height: 64,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         boxShadow: [
           BoxShadow(
-            color: AppTheme.green.withOpacity(0.34),
+            color: AppTheme.green.withOpacity(0.38),
             blurRadius: 26,
             spreadRadius: 3,
           ),
@@ -904,7 +891,7 @@ class _ScooterPainter extends CustomPainter {
 
     canvas.drawCircle(
       center,
-      29,
+      28,
       Paint()
         ..color = AppTheme.green.withOpacity(0.12)
         ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 12),
@@ -915,30 +902,30 @@ class _ScooterPainter extends CustomPainter {
         colors: [AppTheme.orange, AppTheme.green],
       ).createShader(Offset.zero & size);
 
-    final darkPaint = Paint()..color = AppTheme.bg.withOpacity(0.85);
-    final whitePaint = Paint()..color = Colors.white.withOpacity(0.92);
+    final darkPaint = Paint()..color = AppTheme.bg.withOpacity(0.86);
+    final whitePaint = Paint()..color = Colors.white.withOpacity(0.94);
 
     canvas.drawRRect(
       RRect.fromRectAndRadius(
         Rect.fromCenter(
           center: Offset(center.dx + 3, center.dy),
-          width: 42,
-          height: 24,
+          width: 40,
+          height: 23,
         ),
         const Radius.circular(14),
       ),
       bodyPaint,
     );
 
-    canvas.drawCircle(Offset(center.dx - 14, center.dy + 16), 8, darkPaint);
-    canvas.drawCircle(Offset(center.dx + 18, center.dy + 16), 8, darkPaint);
+    canvas.drawCircle(Offset(center.dx - 13, center.dy + 15), 7.5, darkPaint);
+    canvas.drawCircle(Offset(center.dx + 17, center.dy + 15), 7.5, darkPaint);
 
-    canvas.drawCircle(Offset(center.dx - 14, center.dy + 16), 3, whitePaint);
-    canvas.drawCircle(Offset(center.dx + 18, center.dy + 16), 3, whitePaint);
+    canvas.drawCircle(Offset(center.dx - 13, center.dy + 15), 3, whitePaint);
+    canvas.drawCircle(Offset(center.dx + 17, center.dy + 15), 3, whitePaint);
 
     canvas.drawRRect(
       RRect.fromRectAndRadius(
-        Rect.fromLTWH(center.dx + 5, center.dy - 15, 18, 11),
+        Rect.fromLTWH(center.dx + 4, center.dy - 14, 17, 10),
         const Radius.circular(6),
       ),
       Paint()..color = AppTheme.bg.withOpacity(0.74),
@@ -950,12 +937,12 @@ class _ScooterPainter extends CustomPainter {
       ..strokeCap = StrokeCap.round;
 
     canvas.drawLine(
-      Offset(center.dx + 18, center.dy - 8),
-      Offset(center.dx + 30, center.dy - 18),
+      Offset(center.dx + 17, center.dy - 8),
+      Offset(center.dx + 28, center.dy - 17),
       handlePaint,
     );
 
-    canvas.drawCircle(Offset(center.dx + 32, center.dy - 19), 2.5, whitePaint);
+    canvas.drawCircle(Offset(center.dx + 30, center.dy - 18), 2.4, whitePaint);
   }
 
   @override
@@ -979,139 +966,138 @@ class _DeliveryBottomSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ClipRRect(
-      borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
-        child: Container(
-          padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
-          decoration: BoxDecoration(
-            color: const Color(0xDD07100F),
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-            border: Border.all(color: Colors.white.withOpacity(0.09)),
+    return Container(
+      padding: const EdgeInsets.fromLTRB(14, 10, 14, 10),
+      decoration: BoxDecoration(
+        color: const Color(0xF207100F),
+        borderRadius: BorderRadius.circular(28),
+        border: Border.all(color: Colors.white.withOpacity(0.09)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.34),
+            blurRadius: 20,
+            offset: const Offset(0, -6),
           ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
+        ],
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 40,
+            height: 4,
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.16),
+              borderRadius: BorderRadius.circular(100),
+            ),
+          ),
+
+          const SizedBox(height: 9),
+
+          Row(
             children: [
-              Container(
-                width: 42,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.18),
-                  borderRadius: BorderRadius.circular(100),
+              Expanded(
+                child: Text(
+                  isDelivered ? 'Delivered successfully' : 'Out for delivery',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: -0.4,
+                  ),
                 ),
               ),
+              const SizedBox(width: 10),
+              GestureDetector(
+                onTap: isDelivered ? onDone : null,
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 250),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 13,
+                    vertical: 8,
+                  ),
+                  decoration: BoxDecoration(
+                    color: isDelivered
+                        ? AppTheme.green
+                        : AppTheme.green.withOpacity(0.10),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    isDelivered ? 'Done' : '$etaMinutes min',
+                    style: TextStyle(
+                      color: isDelivered ? AppTheme.bg : AppTheme.green,
+                      fontSize: 12.5,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
 
-              const SizedBox(height: 13),
+          const SizedBox(height: 9),
 
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
+          Row(
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(14),
+                child: Image.network(
+                  'https://images.unsplash.com/photo-1599566150163-29194dcaad36?q=80&w=400&auto=format&fit=crop',
+                  width: 38,
+                  height: 38,
+                  fit: BoxFit.cover,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Hamza Khan',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
                       isDelivered
-                          ? 'Delivered successfully'
-                          : 'Out for delivery',
+                          ? 'Order delivered to your location'
+                          : 'Honda 125 · 4.9 rating · $etaMinutes min away',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 17,
-                        fontWeight: FontWeight.w900,
-                        letterSpacing: -0.4,
+                        color: AppTheme.muted,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w500,
                       ),
                     ),
-                  ),
-                  const SizedBox(width: 10),
-                  GestureDetector(
-                    onTap: isDelivered ? onDone : null,
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 250),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 13,
-                        vertical: 8,
-                      ),
-                      decoration: BoxDecoration(
-                        color: isDelivered
-                            ? AppTheme.green
-                            : AppTheme.green.withOpacity(0.10),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Text(
-                        isDelivered ? 'Done' : '$etaMinutes min',
-                        style: TextStyle(
-                          color: isDelivered ? AppTheme.bg : AppTheme.green,
-                          fontSize: 12.5,
-                          fontWeight: FontWeight.w900,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-
-              const SizedBox(height: 12),
-
-              Row(
-                children: [
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(15),
-                    child: Image.network(
-                      'https://images.unsplash.com/photo-1599566150163-29194dcaad36?q=80&w=400&auto=format&fit=crop',
-                      width: 44,
-                      height: 44,
-                      fit: BoxFit.cover,
-                    ),
-                  ),
-                  const SizedBox(width: 11),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'Hamza Khan',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 14.5,
-                            fontWeight: FontWeight.w800,
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          isDelivered
-                              ? 'Order delivered to your location'
-                              : 'Honda 125 · 4.9 rating · $etaMinutes min away',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            color: AppTheme.muted,
-                            fontSize: 11.5,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  const _CircleAction(
-                    icon: Icons.call_rounded,
-                    color: AppTheme.green,
-                  ),
-                  const SizedBox(width: 7),
-                  const _CircleAction(
-                    icon: Icons.chat_rounded,
-                    color: AppTheme.cyan,
-                  ),
-                ],
+              const SizedBox(width: 7),
+              const _CircleAction(
+                icon: Icons.call_rounded,
+                color: AppTheme.green,
               ),
-
-              const SizedBox(height: 16),
-
-              _ConnectedStepIndicator(activeStep: activeStep),
+              const SizedBox(width: 6),
+              const _CircleAction(
+                icon: Icons.chat_rounded,
+                color: AppTheme.cyan,
+              ),
             ],
           ),
-        ),
+
+          const SizedBox(height: 9),
+
+          _ConnectedStepIndicator(activeStep: activeStep),
+        ],
       ),
     );
   }
@@ -1126,14 +1112,14 @@ class _CircleAction extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 38,
-      height: 38,
+      width: 34,
+      height: 34,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         color: Colors.white.withOpacity(0.06),
         border: Border.all(color: Colors.white.withOpacity(0.08)),
       ),
-      child: Icon(icon, color: color, size: 17),
+      child: Icon(icon, color: color, size: 16),
     );
   }
 }
@@ -1165,8 +1151,8 @@ class _ConnectedStepIndicator extends StatelessWidget {
                   children: [
                     AnimatedContainer(
                       duration: const Duration(milliseconds: 300),
-                      width: isCurrent ? 36 : 32,
-                      height: isCurrent ? 36 : 32,
+                      width: isCurrent ? 30 : 27,
+                      height: isCurrent ? 30 : 27,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         color: isActive
@@ -1181,7 +1167,7 @@ class _ConnectedStepIndicator extends StatelessWidget {
                             ? [
                                 BoxShadow(
                                   color: AppTheme.green.withOpacity(0.28),
-                                  blurRadius: 16,
+                                  blurRadius: 14,
                                   spreadRadius: 1,
                                 ),
                               ]
@@ -1189,20 +1175,20 @@ class _ConnectedStepIndicator extends StatelessWidget {
                       ),
                       child: Icon(
                         steps[index].icon,
-                        size: 16,
+                        size: 14,
                         color: isActive
                             ? AppTheme.bg
                             : Colors.white.withOpacity(0.36),
                       ),
                     ),
-                    const SizedBox(height: 6),
+                    const SizedBox(height: 4),
                     Text(
                       steps[index].label,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
                         color: isActive ? Colors.white : AppTheme.muted,
-                        fontSize: 10,
+                        fontSize: 9.5,
                         fontWeight: isActive
                             ? FontWeight.w800
                             : FontWeight.w500,
@@ -1215,7 +1201,7 @@ class _ConnectedStepIndicator extends StatelessWidget {
                 Expanded(
                   child: Container(
                     height: 3,
-                    margin: const EdgeInsets.only(bottom: 23),
+                    margin: const EdgeInsets.only(bottom: 19),
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(99),
                       color: index < activeStep - 1
