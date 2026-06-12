@@ -15,11 +15,14 @@ class AiFoodDiscoveryScreen extends StatefulWidget {
 class _AiFoodDiscoveryScreenState extends State<AiFoodDiscoveryScreen>
     with SingleTickerProviderStateMixin {
   late final AnimationController _orbController;
+
   int _selectedFoodIndex = 0;
   int _selectedCategoryIndex = 0;
+  bool _showOrderBar = false;
 
   List<FoodItem> get _visibleFoods {
     final category = demoCategories[_selectedCategoryIndex].label;
+
     if (category == 'Recommended') {
       return demoFoods;
     }
@@ -29,6 +32,11 @@ class _AiFoodDiscoveryScreenState extends State<AiFoodDiscoveryScreen>
 
   FoodItem get _selectedFood {
     final foods = _visibleFoods;
+
+    if (foods.isEmpty) {
+      return demoFoods.first;
+    }
+
     if (_selectedFoodIndex >= foods.length) {
       return foods.first;
     }
@@ -39,6 +47,7 @@ class _AiFoodDiscoveryScreenState extends State<AiFoodDiscoveryScreen>
   @override
   void initState() {
     super.initState();
+
     _orbController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 2600),
@@ -55,11 +64,21 @@ class _AiFoodDiscoveryScreenState extends State<AiFoodDiscoveryScreen>
     setState(() {
       _selectedCategoryIndex = index;
       _selectedFoodIndex = 0;
+      _showOrderBar = false;
     });
   }
 
   void _selectFood(int index) {
-    setState(() => _selectedFoodIndex = index);
+    setState(() {
+      _selectedFoodIndex = index;
+      _showOrderBar = true;
+    });
+  }
+
+  void _selectTopChoice() {
+    setState(() {
+      _showOrderBar = true;
+    });
   }
 
   void _goToConfirmation() {
@@ -85,6 +104,7 @@ class _AiFoodDiscoveryScreenState extends State<AiFoodDiscoveryScreen>
       body: Stack(
         children: [
           const Positioned.fill(child: _DiscoveryBackdrop()),
+
           Positioned.fill(
             child: Container(
               decoration: const BoxDecoration(
@@ -93,17 +113,23 @@ class _AiFoodDiscoveryScreenState extends State<AiFoodDiscoveryScreen>
                   end: Alignment.bottomCenter,
                   colors: [
                     Colors.transparent,
-                    Color(0x11000000),
-                    Color(0xB8000000),
+                    Color(0x08000000),
+                    Color(0xB0000000),
                   ],
                 ),
               ),
             ),
           ),
+
           SafeArea(
             child: SingleChildScrollView(
               physics: const BouncingScrollPhysics(),
-              padding: const EdgeInsets.fromLTRB(20, 16, 20, 28),
+              padding: EdgeInsets.fromLTRB(
+                20,
+                16,
+                20,
+                _showOrderBar ? 118 : 28,
+              ),
               child: TweenAnimationBuilder<double>(
                 tween: Tween(begin: 0, end: 1),
                 duration: const Duration(milliseconds: 520),
@@ -124,7 +150,7 @@ class _AiFoodDiscoveryScreenState extends State<AiFoodDiscoveryScreen>
                       children: [
                         const Expanded(
                           child: PremiumSearchBar(
-                            hintText: 'Crave something? Search here...',
+                            hintText: 'Search burgers, pizza, pasta...',
                           ),
                         ),
                         const SizedBox(width: 12),
@@ -133,10 +159,17 @@ class _AiFoodDiscoveryScreenState extends State<AiFoodDiscoveryScreen>
                           height: 52,
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
-                            color: Colors.white.withOpacity(0.06),
+                            color: Colors.white.withOpacity(0.065),
                             border: Border.all(
-                              color: Colors.white.withOpacity(0.08),
+                              color: Colors.white.withOpacity(0.09),
                             ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.18),
+                                blurRadius: 18,
+                                offset: const Offset(0, 10),
+                              ),
+                            ],
                           ),
                           child: const Icon(
                             Icons.person_rounded,
@@ -146,7 +179,9 @@ class _AiFoodDiscoveryScreenState extends State<AiFoodDiscoveryScreen>
                         ),
                       ],
                     ),
+
                     const SizedBox(height: 24),
+
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -160,7 +195,7 @@ class _AiFoodDiscoveryScreenState extends State<AiFoodDiscoveryScreen>
                               ),
                               const SizedBox(height: 12),
                               const Text(
-                                'Discover top-rated dishes and local favorites, selected for quality and speed.',
+                                'Discover premium dishes, fast riders, and top-rated restaurants near you.',
                                 style: TextStyle(
                                   color: AppTheme.muted,
                                   fontSize: 14,
@@ -196,146 +231,183 @@ class _AiFoodDiscoveryScreenState extends State<AiFoodDiscoveryScreen>
                         ),
                       ],
                     ),
-                    const SizedBox(height: 18),
-                    PremiumSurface(
-                      padding: const EdgeInsets.all(16),
-                      borderRadius: BorderRadius.circular(30),
-                      child: LayoutBuilder(
-                        builder: (context, constraints) {
-                          final imageSize = constraints.maxWidth < 360
-                              ? 92.0
-                              : 104.0;
 
-                          return Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Wrap(
-                                      spacing: 10,
-                                      runSpacing: 8,
-                                      crossAxisAlignment:
-                                          WrapCrossAlignment.center,
-                                      children: [
-                                        Container(
-                                          padding: const EdgeInsets.symmetric(
-                                            horizontal: 10,
-                                            vertical: 7,
-                                          ),
-                                          decoration: BoxDecoration(
-                                            color: AppTheme.green.withOpacity(
-                                              0.14,
+                    const SizedBox(height: 18),
+
+                    GestureDetector(
+                      onTap: _selectTopChoice,
+                      child: PremiumSurface(
+                        padding: const EdgeInsets.all(16),
+                        borderRadius: BorderRadius.circular(30),
+                        child: LayoutBuilder(
+                          builder: (context, constraints) {
+                            final imageSize = constraints.maxWidth < 360
+                                ? 92.0
+                                : 104.0;
+
+                            return Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Wrap(
+                                        spacing: 10,
+                                        runSpacing: 8,
+                                        crossAxisAlignment:
+                                            WrapCrossAlignment.center,
+                                        children: [
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 10,
+                                              vertical: 7,
                                             ),
-                                            borderRadius: BorderRadius.circular(
-                                              999,
+                                            decoration: BoxDecoration(
+                                              color: AppTheme.green.withOpacity(
+                                                0.14,
+                                              ),
+                                              borderRadius:
+                                                  BorderRadius.circular(999),
+                                              border: Border.all(
+                                                color: AppTheme.green
+                                                    .withOpacity(0.22),
+                                              ),
                                             ),
-                                          ),
-                                          child: const Text(
-                                            'Top Choice',
-                                            style: TextStyle(
-                                              color: AppTheme.green,
-                                              fontSize: 11.5,
-                                              fontWeight: FontWeight.w800,
-                                            ),
-                                          ),
-                                        ),
-                                        const Row(
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            Icon(
-                                              Icons.bolt_rounded,
-                                              color: AppTheme.orange,
-                                              size: 18,
-                                            ),
-                                            SizedBox(width: 4),
-                                            Text(
-                                              '98% match',
+                                            child: const Text(
+                                              'Top Choice',
                                               style: TextStyle(
-                                                color: Colors.white,
-                                                fontSize: 12,
+                                                color: AppTheme.green,
+                                                fontSize: 11.5,
                                                 fontWeight: FontWeight.w800,
                                               ),
                                             ),
-                                          ],
+                                          ),
+                                          const Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              Icon(
+                                                Icons.bolt_rounded,
+                                                color: AppTheme.orange,
+                                                size: 18,
+                                              ),
+                                              SizedBox(width: 4),
+                                              Text(
+                                                '98% match',
+                                                style: TextStyle(
+                                                  color: Colors.white,
+                                                  fontSize: 12,
+                                                  fontWeight: FontWeight.w800,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ],
+                                      ),
+
+                                      const SizedBox(height: 12),
+
+                                      Text(
+                                        _selectedFood.name,
+                                        maxLines: 2,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 20,
+                                          fontWeight: FontWeight.w900,
+                                          letterSpacing: -0.7,
                                         ),
-                                      ],
-                                    ),
+                                      ),
 
-                                    const SizedBox(height: 12),
+                                      const SizedBox(height: 8),
 
-                                    Text(
-                                      _selectedFood.name,
-                                      maxLines: 2,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 20,
-                                        fontWeight: FontWeight.w900,
-                                        letterSpacing: -0.7,
+                                      Text(
+                                        '${_selectedFood.restaurant} · ${_selectedFood.distance} away · ${_selectedFood.calories} kcal',
+                                        maxLines: 2,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: const TextStyle(
+                                          color: AppTheme.muted,
+                                          fontSize: 12.5,
+                                          fontWeight: FontWeight.w500,
+                                          height: 1.35,
+                                        ),
+                                      ),
+
+                                      const SizedBox(height: 14),
+
+                                      Row(
+                                        children: [
+                                          _PillStat(
+                                            icon: Icons.star_rounded,
+                                            label: _selectedFood.rating
+                                                .toStringAsFixed(1),
+                                            accent: AppTheme.orange,
+                                          ),
+                                          const SizedBox(width: 7),
+                                          _PillStat(
+                                            icon: Icons.schedule_rounded,
+                                            label: _selectedFood.time,
+                                            accent: AppTheme.cyan,
+                                          ),
+                                          const SizedBox(width: 7),
+                                          _PillStat(
+                                            icon: Icons.local_offer_rounded,
+                                            label: _selectedFood.discount,
+                                            accent: AppTheme.green,
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                ),
+
+                                const SizedBox(width: 10),
+
+                                Stack(
+                                  children: [
+                                    SizedBox(
+                                      width: imageSize,
+                                      height: imageSize,
+                                      child: PremiumNetworkImage(
+                                        imageUrl: _selectedFood.imageUrl,
+                                        heroTag: _selectedFood.imageUrl,
+                                        borderRadius: BorderRadius.circular(26),
                                       ),
                                     ),
-
-                                    const SizedBox(height: 8),
-
-                                    Text(
-                                      '${_selectedFood.restaurant} · ${_selectedFood.distance} away · ${_selectedFood.calories} kcal',
-                                      maxLines: 2,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: const TextStyle(
-                                        color: AppTheme.muted,
-                                        fontSize: 12.5,
-                                        fontWeight: FontWeight.w500,
-                                        height: 1.35,
+                                    Positioned(
+                                      right: 8,
+                                      top: 8,
+                                      child: Container(
+                                        width: 28,
+                                        height: 28,
+                                        decoration: BoxDecoration(
+                                          shape: BoxShape.circle,
+                                          color: const Color(0xEE07100F),
+                                          border: Border.all(
+                                            color: Colors.white.withOpacity(
+                                              0.12,
+                                            ),
+                                          ),
+                                        ),
+                                        child: const Icon(
+                                          Icons.add_rounded,
+                                          color: AppTheme.green,
+                                          size: 18,
+                                        ),
                                       ),
-                                    ),
-
-                                    const SizedBox(height: 14),
-
-                                    Row(
-                                      children: [
-                                        _PillStat(
-                                          icon: Icons.star_rounded,
-                                          label: _selectedFood.rating
-                                              .toStringAsFixed(1),
-                                          accent: AppTheme.orange,
-                                        ),
-                                        const SizedBox(width: 7),
-                                        _PillStat(
-                                          icon: Icons.schedule_rounded,
-                                          label: _selectedFood.time,
-                                          accent: AppTheme.cyan,
-                                        ),
-                                        const SizedBox(width: 7),
-                                        _PillStat(
-                                          icon: Icons.local_offer_rounded,
-                                          label: _selectedFood.discount,
-                                          accent: AppTheme.green,
-                                        ),
-                                      ],
                                     ),
                                   ],
                                 ),
-                              ),
-
-                              const SizedBox(width: 10),
-
-                              SizedBox(
-                                width: imageSize,
-                                height: imageSize,
-                                child: PremiumNetworkImage(
-                                  imageUrl: _selectedFood.imageUrl,
-                                  heroTag: _selectedFood.imageUrl,
-                                  borderRadius: BorderRadius.circular(26),
-                                ),
-                              ),
-                            ],
-                          );
-                        },
+                              ],
+                            );
+                          },
+                        ),
                       ),
                     ),
+
                     const SizedBox(height: 18),
+
                     SizedBox(
                       height: 48,
                       child: ListView.separated(
@@ -359,13 +431,17 @@ class _AiFoodDiscoveryScreenState extends State<AiFoodDiscoveryScreen>
                         itemCount: demoCategories.length,
                       ),
                     ),
+
                     const SizedBox(height: 22),
+
                     const PremiumSectionHeader(
                       title: 'Featured restaurants',
                       subtitle:
-                          'Premium spots with standout photography and fast delivery.',
+                          'Premium spots with standout dishes and fast delivery.',
                     ),
+
                     const SizedBox(height: 14),
+
                     SizedBox(
                       height: 208,
                       child: ListView.separated(
@@ -380,15 +456,19 @@ class _AiFoodDiscoveryScreenState extends State<AiFoodDiscoveryScreen>
                         itemCount: featuredRestaurants.length,
                       ),
                     ),
+
                     const SizedBox(height: 24),
+
                     PremiumSectionHeader(
                       title: 'Curated for you',
                       subtitle:
-                          'Tap a dish to preview the AI-selected item and continue to checkout.',
+                          'Tap a dish and continue instantly from the bottom bar.',
                       actionLabel: 'View all',
                       onAction: () {},
                     ),
+
                     const SizedBox(height: 14),
+
                     if (visibleFoods.isEmpty)
                       const PremiumSurface(
                         child: Text(
@@ -413,14 +493,23 @@ class _AiFoodDiscoveryScreenState extends State<AiFoodDiscoveryScreen>
                         separatorBuilder: (_, __) => const SizedBox(height: 14),
                         itemCount: visibleFoods.length,
                       ),
-                    const SizedBox(height: 24),
-                    PrimaryActionButton(
-                      label: 'Order from ${_selectedFood.restaurant}',
-                      icon: Icons.arrow_forward_rounded,
-                      onTap: _goToConfirmation,
-                    ),
                   ],
                 ),
+              ),
+            ),
+          ),
+
+          AnimatedPositioned(
+            duration: const Duration(milliseconds: 360),
+            curve: Curves.easeOutCubic,
+            left: 16,
+            right: 16,
+            bottom: _showOrderBar ? 16 : -120,
+            child: SafeArea(
+              top: false,
+              child: _StickyOrderBar(
+                food: _selectedFood,
+                onTap: _goToConfirmation,
               ),
             ),
           ),
@@ -430,70 +519,119 @@ class _AiFoodDiscoveryScreenState extends State<AiFoodDiscoveryScreen>
   }
 }
 
-class _TopBar extends StatelessWidget {
-  const _TopBar();
+class _StickyOrderBar extends StatelessWidget {
+  final FoodItem food;
+  final VoidCallback onTap;
+
+  const _StickyOrderBar({required this.food, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Container(
-          width: 46,
-          height: 46,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            border: Border.all(color: Colors.white.withOpacity(0.08)),
-            gradient: const LinearGradient(
-              colors: [Color(0xFF1A2330), Color(0xFF0D141B)],
+    return Container(
+      padding: const EdgeInsets.fromLTRB(12, 10, 10, 10),
+      decoration: BoxDecoration(
+        color: const Color(0xF207100F),
+        borderRadius: BorderRadius.circular(28),
+        border: Border.all(color: Colors.white.withOpacity(0.10)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.38),
+            blurRadius: 26,
+            offset: const Offset(0, 12),
+          ),
+          BoxShadow(
+            color: food.accent.withOpacity(0.10),
+            blurRadius: 26,
+            offset: const Offset(0, -4),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(18),
+            child: Image.network(
+              food.imageUrl,
+              width: 52,
+              height: 52,
+              fit: BoxFit.cover,
             ),
           ),
-          child: const Icon(
-            Icons.person_rounded,
-            color: Colors.white,
-            size: 22,
-          ),
-        ),
-        const SizedBox(width: 12),
-        const Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Delivering to',
-                style: TextStyle(
-                  color: AppTheme.muted,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
+
+          const SizedBox(width: 12),
+
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  food.name,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 14.5,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: -0.3,
+                  ),
                 ),
-              ),
-              SizedBox(height: 3),
-              Text(
-                'Home · Islamabad',
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 14.5,
-                  fontWeight: FontWeight.w900,
+                const SizedBox(height: 3),
+                Text(
+                  '${food.restaurant} · ${food.time}',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: AppTheme.muted,
+                    fontSize: 11.5,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
+              ],
+            ),
+          ),
+
+          const SizedBox(width: 10),
+
+          GestureDetector(
+            onTap: onTap,
+            child: Container(
+              height: 48,
+              padding: const EdgeInsets.symmetric(horizontal: 17),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(20),
+                gradient: const LinearGradient(
+                  colors: [AppTheme.green, AppTheme.cyan],
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppTheme.green.withOpacity(0.22),
+                    blurRadius: 18,
+                    offset: const Offset(0, 8),
+                  ),
+                ],
               ),
-            ],
+              child: const Row(
+                children: [
+                  Text(
+                    'Order',
+                    style: TextStyle(
+                      color: AppTheme.bg,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                  SizedBox(width: 6),
+                  Icon(
+                    Icons.arrow_forward_rounded,
+                    color: AppTheme.bg,
+                    size: 19,
+                  ),
+                ],
+              ),
+            ),
           ),
-        ),
-        Container(
-          width: 46,
-          height: 46,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
-            color: Colors.white.withOpacity(0.07),
-            border: Border.all(color: Colors.white.withOpacity(0.08)),
-          ),
-          child: const Icon(
-            Icons.notifications_none_rounded,
-            color: Colors.white,
-          ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }
@@ -564,7 +702,7 @@ class _RestaurantCard extends StatelessWidget {
                 borderRadius: const BorderRadius.vertical(
                   top: Radius.circular(26),
                 ),
-                overlayColors: const [Colors.transparent, Color(0x99000000)],
+                overlayColors: const [Colors.transparent, Color(0xAA000000)],
               ),
             ),
             Padding(
@@ -700,16 +838,49 @@ class _FoodCard extends StatelessWidget {
           ),
           child: Row(
             children: [
-              SizedBox(
-                width: 96,
-                height: 96,
-                child: PremiumNetworkImage(
-                  imageUrl: food.imageUrl,
-                  heroTag: '${food.imageUrl}_list',
-                  borderRadius: BorderRadius.circular(26),
-                ),
+              Stack(
+                children: [
+                  SizedBox(
+                    width: 96,
+                    height: 96,
+                    child: PremiumNetworkImage(
+                      imageUrl: food.imageUrl,
+                      heroTag: '${food.imageUrl}_list',
+                      borderRadius: BorderRadius.circular(26),
+                    ),
+                  ),
+                  if (selected)
+                    Positioned(
+                      top: 8,
+                      right: 8,
+                      child: Container(
+                        width: 26,
+                        height: 26,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: AppTheme.green,
+                          border: Border.all(
+                            color: Colors.white.withOpacity(0.25),
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: AppTheme.green.withOpacity(0.35),
+                              blurRadius: 14,
+                            ),
+                          ],
+                        ),
+                        child: const Icon(
+                          Icons.check_rounded,
+                          color: AppTheme.bg,
+                          size: 17,
+                        ),
+                      ),
+                    ),
+                ],
               ),
+
               const SizedBox(width: 14),
+
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -832,15 +1003,7 @@ class _DiscoveryBackdrop extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [AppTheme.bg, AppTheme.bgAlt],
-        ),
-      ),
-    );
+    return CustomPaint(painter: _DiscoveryBackdropPainter());
   }
 }
 
@@ -855,161 +1018,53 @@ class _DiscoveryBackdropPainter extends CustomPainter {
         ..shader = const LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [
-            AppTheme.bg,
-            AppTheme.bgAlt,
-            Color(0xFF0D131D),
-            Color(0xFF070B10),
-          ],
+          colors: [AppTheme.bg, AppTheme.bgAlt, Color(0xFF080D14)],
         ).createShader(rect),
     );
 
     canvas.drawCircle(
-      Offset(size.width * 0.82, size.height * 0.16),
-      220,
+      Offset(size.width * 0.82, size.height * 0.12),
+      260,
       Paint()
         ..shader =
             RadialGradient(
-              colors: [AppTheme.green.withOpacity(0.20), Colors.transparent],
+              colors: [AppTheme.green.withOpacity(0.17), Colors.transparent],
             ).createShader(
               Rect.fromCircle(
-                center: Offset(size.width * 0.82, size.height * 0.16),
-                radius: 220,
+                center: Offset(size.width * 0.82, size.height * 0.12),
+                radius: 260,
               ),
             ),
     );
 
     canvas.drawCircle(
-      Offset(size.width * 0.12, size.height * 0.22),
-      180,
+      Offset(size.width * 0.10, size.height * 0.30),
+      230,
       Paint()
         ..shader =
             RadialGradient(
-              colors: [AppTheme.orange.withOpacity(0.18), Colors.transparent],
+              colors: [AppTheme.orange.withOpacity(0.12), Colors.transparent],
             ).createShader(
               Rect.fromCircle(
-                center: Offset(size.width * 0.12, size.height * 0.22),
-                radius: 180,
+                center: Offset(size.width * 0.10, size.height * 0.30),
+                radius: 230,
               ),
             ),
     );
 
-    final gridPaint = Paint()..color = Colors.white.withOpacity(0.04);
-    for (double x = 18; x < size.width; x += 38) {
-      for (double y = 98; y < size.height; y += 38) {
-        canvas.drawCircle(Offset(x, y), 1.1, gridPaint);
+    final dotPaint = Paint()..color = Colors.white.withOpacity(0.045);
+
+    for (double x = 24; x < size.width; x += 42) {
+      for (double y = 90; y < size.height; y += 42) {
+        canvas.drawCircle(Offset(x, y), 1, dotPaint);
       }
     }
-
-    final roads = Paint()
-      ..color = Colors.white.withOpacity(0.05)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 20
-      ..strokeCap = StrokeCap.round;
-
-    final roadsThin = Paint()
-      ..color = Colors.white.withOpacity(0.03)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 10
-      ..strokeCap = StrokeCap.round;
-
-    canvas.drawPath(
-      Path()
-        ..moveTo(-40, size.height * 0.32)
-        ..cubicTo(
-          size.width * 0.28,
-          size.height * 0.18,
-          size.width * 0.46,
-          size.height * 0.46,
-          size.width + 40,
-          size.height * 0.28,
-        ),
-      roads,
-    );
-    canvas.drawPath(
-      Path()
-        ..moveTo(size.width * 0.08, -40)
-        ..cubicTo(
-          size.width * 0.10,
-          size.height * 0.24,
-          size.width * 0.32,
-          size.height * 0.56,
-          size.width * 0.20,
-          size.height + 40,
-        ),
-      roadsThin,
-    );
-    canvas.drawPath(
-      Path()
-        ..moveTo(size.width + 30, size.height * 0.70)
-        ..cubicTo(
-          size.width * 0.72,
-          size.height * 0.58,
-          size.width * 0.48,
-          size.height * 0.84,
-          -50,
-          size.height * 0.83,
-        ),
-      roads,
-    );
-
-    final blocks = Paint()..color = Colors.white.withOpacity(0.03);
-    final border = Paint()
-      ..color = Colors.white.withOpacity(0.04)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1;
-
-    final rects = [
-      Rect.fromLTWH(size.width * 0.08, size.height * 0.10, 84, 58),
-      Rect.fromLTWH(size.width * 0.24, size.height * 0.12, 122, 72),
-      Rect.fromLTWH(size.width * 0.56, size.height * 0.11, 128, 78),
-      Rect.fromLTWH(size.width * 0.14, size.height * 0.46, 118, 86),
-      Rect.fromLTWH(size.width * 0.58, size.height * 0.42, 128, 110),
-      Rect.fromLTWH(size.width * 0.11, size.height * 0.76, 118, 76),
-      Rect.fromLTWH(size.width * 0.62, size.height * 0.74, 118, 72),
-    ];
-
-    for (final rect in rects) {
-      final rRect = RRect.fromRectAndRadius(rect, const Radius.circular(20));
-      canvas.drawRRect(rRect, blocks);
-      canvas.drawRRect(rRect, border);
-    }
-
-    _drawLabel(
-      canvas,
-      'North Ridge',
-      Offset(size.width * 0.18, size.height * 0.20),
-    );
-    _drawLabel(
-      canvas,
-      'Food District',
-      Offset(size.width * 0.58, size.height * 0.40),
-    );
-    _drawLabel(
-      canvas,
-      'Central Loop',
-      Offset(size.width * 0.34, size.height * 0.70),
-    );
-  }
-
-  void _drawLabel(Canvas canvas, String text, Offset offset) {
-    final painter = TextPainter(
-      text: TextSpan(
-        text: text,
-        style: TextStyle(
-          color: Colors.white.withOpacity(0.12),
-          fontSize: 12,
-          fontWeight: FontWeight.w700,
-          letterSpacing: 0.2,
-        ),
-      ),
-      textDirection: TextDirection.ltr,
-    )..layout();
-    painter.paint(canvas, offset);
   }
 
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+  bool shouldRepaint(covariant _DiscoveryBackdropPainter oldDelegate) {
+    return false;
+  }
 }
 
 class _RecommendationOrbPainter extends CustomPainter {
@@ -1023,11 +1078,12 @@ class _RecommendationOrbPainter extends CustomPainter {
 
     for (int i = 0; i < 3; i++) {
       final wave = (progress + i * 0.3) % 1;
+
       canvas.drawCircle(
         center,
         26 + wave * 30,
         Paint()
-          ..color = AppTheme.green.withOpacity((1 - wave) * 0.22)
+          ..color = AppTheme.green.withOpacity((1 - wave) * 0.18)
           ..style = PaintingStyle.stroke
           ..strokeWidth = 2,
       );
