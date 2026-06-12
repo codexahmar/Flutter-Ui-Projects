@@ -313,7 +313,7 @@ class _DeliveryMapPainter extends CustomPainter {
           end: Alignment.bottomRight,
           colors: [
             Color(0xFF05090F),
-            Color(0xFF071712),
+            Color(0xFF071510),
             Color(0xFF0A1018),
             Color(0xFF05080D),
           ],
@@ -326,7 +326,7 @@ class _DeliveryMapPainter extends CustomPainter {
       Paint()
         ..shader =
             RadialGradient(
-              colors: [AppTheme.green.withOpacity(0.24), Colors.transparent],
+              colors: [AppTheme.green.withOpacity(0.13), Colors.transparent],
             ).createShader(
               Rect.fromCircle(
                 center: Offset(size.width * 0.82, size.height * 0.16),
@@ -341,7 +341,7 @@ class _DeliveryMapPainter extends CustomPainter {
       Paint()
         ..shader =
             RadialGradient(
-              colors: [AppTheme.orange.withOpacity(0.18), Colors.transparent],
+              colors: [AppTheme.orange.withOpacity(0.14), Colors.transparent],
             ).createShader(
               Rect.fromCircle(
                 center: Offset(size.width * 0.20, size.height * 0.40),
@@ -356,7 +356,7 @@ class _DeliveryMapPainter extends CustomPainter {
       Paint()
         ..shader =
             RadialGradient(
-              colors: [AppTheme.cyan.withOpacity(0.16), Colors.transparent],
+              colors: [AppTheme.cyan.withOpacity(0.10), Colors.transparent],
             ).createShader(
               Rect.fromCircle(
                 center: Offset(size.width * 0.67, size.height * 0.58),
@@ -368,21 +368,27 @@ class _DeliveryMapPainter extends CustomPainter {
 
   void _drawRoads(Canvas canvas, Size size) {
     final roadGlow = Paint()
-      ..color = Colors.white.withOpacity(0.06)
+      ..color = Colors.white.withOpacity(0.035)
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 62
+      ..strokeWidth = 58
       ..strokeCap = StrokeCap.round;
 
     final roadBase = Paint()
-      ..color = Colors.white.withOpacity(0.14)
+      ..color = Colors.white.withOpacity(0.105)
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 28
+      ..strokeWidth = 26
       ..strokeCap = StrokeCap.round;
 
     final roadInner = Paint()
-      ..color = const Color(0xFF101B21).withOpacity(0.95)
+      ..color = const Color(0xFF101B21).withOpacity(0.96)
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 17
+      ..strokeWidth = 16
+      ..strokeCap = StrokeCap.round;
+
+    final roadLine = Paint()
+      ..color = Colors.white.withOpacity(0.11)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2
       ..strokeCap = StrokeCap.round;
 
     final roadA = Path()
@@ -433,14 +439,15 @@ class _DeliveryMapPainter extends CustomPainter {
       canvas.drawPath(road, roadGlow);
       canvas.drawPath(road, roadBase);
       canvas.drawPath(road, roadInner);
+      canvas.drawPath(road, roadLine);
     }
   }
 
   void _drawBlocks(Canvas canvas, Size size) {
-    final fill = Paint()..color = Colors.white.withOpacity(0.075);
+    final fill = Paint()..color = Colors.white.withOpacity(0.055);
 
     final border = Paint()
-      ..color = Colors.white.withOpacity(0.11)
+      ..color = Colors.white.withOpacity(0.09)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1;
 
@@ -486,8 +493,8 @@ class _DeliveryMapPainter extends CustomPainter {
     final painter = TextPainter(
       text: TextSpan(
         text: text,
-        style: TextStyle(
-          color: Colors.white.withOpacity(0.24),
+        style: const TextStyle(
+          color: Color(0xFFEAF3F0),
           fontSize: 12,
           fontWeight: FontWeight.w800,
           letterSpacing: 0.2,
@@ -500,7 +507,7 @@ class _DeliveryMapPainter extends CustomPainter {
   }
 
   void _drawDots(Canvas canvas, Size size) {
-    final paint = Paint()..color = Colors.white.withOpacity(0.12);
+    final paint = Paint()..color = Colors.white.withOpacity(0.09);
 
     for (double x = 22; x < size.width; x += 40) {
       for (double y = 90; y < size.height - 55; y += 40) {
@@ -520,7 +527,7 @@ class _DeliveryMapPainter extends CustomPainter {
         center,
         radius,
         Paint()
-          ..color = AppTheme.green.withOpacity((1 - progress) * 0.14)
+          ..color = AppTheme.green.withOpacity((1 - progress) * 0.11)
           ..style = PaintingStyle.stroke
           ..strokeWidth = 2.2,
       );
@@ -533,79 +540,85 @@ class _DeliveryMapPainter extends CustomPainter {
     final activeLength = metric.length * routeProgress;
     final activePath = metric.extractPath(0, activeLength);
 
+    /// Reduced glow. Route stays visible without overpowering the UI.
     canvas.drawPath(
       path,
       Paint()
-        ..color = AppTheme.green.withOpacity(0.62)
+        ..color = AppTheme.green.withOpacity(0.18)
         ..style = PaintingStyle.stroke
-        ..strokeWidth = 44
+        ..strokeWidth = 26
         ..strokeCap = StrokeCap.round
         ..strokeJoin = StrokeJoin.round
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 28),
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 14),
     );
 
+    /// Route outer border.
     canvas.drawPath(
       path,
       Paint()
-        ..color = Colors.white.withOpacity(0.82)
+        ..color = Colors.white.withOpacity(0.32)
         ..style = PaintingStyle.stroke
-        ..strokeWidth = 17
+        ..strokeWidth = 12
         ..strokeCap = StrokeCap.round
         ..strokeJoin = StrokeJoin.round,
     );
 
+    /// Route inner dark base.
     canvas.drawPath(
       path,
       Paint()
-        ..color = const Color(0xFF06100E)
+        ..color = const Color(0xFF07100F)
         ..style = PaintingStyle.stroke
-        ..strokeWidth = 9.5
+        ..strokeWidth = 7.5
         ..strokeCap = StrokeCap.round
         ..strokeJoin = StrokeJoin.round,
     );
 
+    /// Full route guide line.
     canvas.drawPath(
       path,
       Paint()
-        ..color = AppTheme.green.withOpacity(1)
+        ..color = const Color(0xFFBFEFE1).withOpacity(0.34)
         ..style = PaintingStyle.stroke
-        ..strokeWidth = 5.8
+        ..strokeWidth = 3.2
         ..strokeCap = StrokeCap.round
         ..strokeJoin = StrokeJoin.round,
     );
 
     if (activeLength > 0) {
+      /// Subtle active glow.
       canvas.drawPath(
         activePath,
         Paint()
-          ..color = AppTheme.cyan.withOpacity(0.58)
+          ..color = AppTheme.cyan.withOpacity(0.20)
           ..style = PaintingStyle.stroke
-          ..strokeWidth = 32
+          ..strokeWidth = 18
           ..strokeCap = StrokeCap.round
           ..strokeJoin = StrokeJoin.round
-          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 18),
+          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 10),
       );
 
+      /// Active route. No heavy green gradient.
       canvas.drawPath(
         activePath,
         Paint()
           ..shader = const LinearGradient(
-            colors: [AppTheme.orange, AppTheme.green, AppTheme.cyan],
+            colors: [AppTheme.orange, Color(0xFFBFEFE1), AppTheme.cyan],
           ).createShader(Offset.zero & size)
           ..style = PaintingStyle.stroke
-          ..strokeWidth = 11.5
+          ..strokeWidth = 8.5
           ..strokeCap = StrokeCap.round
           ..strokeJoin = StrokeJoin.round,
       );
 
       final dashPaint = Paint()
-        ..color = Colors.white.withOpacity(0.95)
+        ..color = Colors.white.withOpacity(0.70)
         ..style = PaintingStyle.stroke
-        ..strokeWidth = 2.5
+        ..strokeWidth = 2
         ..strokeCap = StrokeCap.round;
 
       for (double i = 0; i < activeLength; i += 34) {
-        final dash = metric.extractPath(i, min(i + 12, activeLength));
+        final dash = metric.extractPath(i, min(i + 11, activeLength));
         canvas.drawPath(dash, dashPaint);
       }
     }
@@ -647,9 +660,9 @@ class _FloatingStatusChip extends StatelessWidget {
           border: Border.all(color: Colors.white.withOpacity(0.10)),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.24),
-              blurRadius: 18,
-              offset: const Offset(0, 10),
+              color: Colors.black.withOpacity(0.22),
+              blurRadius: 16,
+              offset: const Offset(0, 9),
             ),
           ],
         ),
@@ -661,15 +674,20 @@ class _FloatingStatusChip extends StatelessWidget {
               height: 39,
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(14),
-                gradient: const LinearGradient(
-                  colors: [AppTheme.orange, AppTheme.green],
+                color: isSearching
+                    ? AppTheme.cyan.withOpacity(0.16)
+                    : AppTheme.green.withOpacity(0.17),
+                border: Border.all(
+                  color: isSearching
+                      ? AppTheme.cyan.withOpacity(0.45)
+                      : AppTheme.green.withOpacity(0.45),
                 ),
               ),
               child: Icon(
                 isSearching
                     ? Icons.search_rounded
                     : Icons.delivery_dining_rounded,
-                color: AppTheme.bg,
+                color: isSearching ? AppTheme.cyan : AppTheme.green,
                 size: 21,
               ),
             ),
@@ -753,14 +771,23 @@ class _RiderSearchPulseState extends State<_RiderSearchPulse>
         return CustomPaint(
           size: const Size(170, 170),
           painter: _RiderPulsePainter(controller.value),
-          child: const SizedBox(
+          child: SizedBox(
             width: 170,
             height: 170,
             child: Center(
-              child: Icon(
-                Icons.delivery_dining_rounded,
-                color: AppTheme.green,
-                size: 30,
+              child: Container(
+                width: 56,
+                height: 56,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: AppTheme.green.withOpacity(0.14),
+                  border: Border.all(color: AppTheme.green.withOpacity(0.45)),
+                ),
+                child: const Icon(
+                  Icons.delivery_dining_rounded,
+                  color: AppTheme.green,
+                  size: 29,
+                ),
               ),
             ),
           ),
@@ -786,19 +813,11 @@ class _RiderPulsePainter extends CustomPainter {
         center,
         30 + delayed * 75,
         Paint()
-          ..color = AppTheme.green.withOpacity((1 - delayed) * 0.20)
+          ..color = AppTheme.green.withOpacity((1 - delayed) * 0.16)
           ..style = PaintingStyle.stroke
-          ..strokeWidth = 2.2,
+          ..strokeWidth = 2,
       );
     }
-
-    canvas.drawCircle(
-      center,
-      36,
-      Paint()
-        ..color = AppTheme.green.withOpacity(0.14)
-        ..style = PaintingStyle.fill,
-    );
   }
 
   @override
@@ -820,6 +839,8 @@ class _SimpleMapMarker extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isOrange = color == AppTheme.orange;
+
     return Column(
       children: [
         Container(
@@ -827,17 +848,21 @@ class _SimpleMapMarker extends StatelessWidget {
           height: 44,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            color: color.withOpacity(0.18),
-            border: Border.all(color: color.withOpacity(0.86), width: 1.5),
+            color: color.withOpacity(0.16),
+            border: Border.all(color: color.withOpacity(0.90), width: 1.5),
             boxShadow: [
               BoxShadow(
-                color: color.withOpacity(0.38),
-                blurRadius: 22,
+                color: color.withOpacity(0.26),
+                blurRadius: 18,
                 spreadRadius: 1,
               ),
             ],
           ),
-          child: Icon(icon, color: color, size: 20),
+          child: Icon(
+            icon,
+            color: isOrange ? AppTheme.orange : AppTheme.green,
+            size: 21,
+          ),
         ),
         const SizedBox(height: 5),
         Container(
@@ -845,7 +870,7 @@ class _SimpleMapMarker extends StatelessWidget {
           decoration: BoxDecoration(
             color: const Color(0xF0061115),
             borderRadius: BorderRadius.circular(999),
-            border: Border.all(color: Colors.white.withOpacity(0.10)),
+            border: Border.all(color: Colors.white.withOpacity(0.12)),
           ),
           child: Text(
             label,
@@ -873,9 +898,9 @@ class _ScooterMarker extends StatelessWidget {
         shape: BoxShape.circle,
         boxShadow: [
           BoxShadow(
-            color: AppTheme.green.withOpacity(0.38),
-            blurRadius: 26,
-            spreadRadius: 3,
+            color: AppTheme.green.withOpacity(0.22),
+            blurRadius: 22,
+            spreadRadius: 2,
           ),
         ],
       ),
@@ -893,8 +918,8 @@ class _ScooterPainter extends CustomPainter {
       center,
       28,
       Paint()
-        ..color = AppTheme.green.withOpacity(0.12)
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 12),
+        ..color = AppTheme.green.withOpacity(0.10)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 10),
     );
 
     final bodyPaint = Paint()
@@ -902,8 +927,8 @@ class _ScooterPainter extends CustomPainter {
         colors: [AppTheme.orange, AppTheme.green],
       ).createShader(Offset.zero & size);
 
-    final darkPaint = Paint()..color = AppTheme.bg.withOpacity(0.86);
-    final whitePaint = Paint()..color = Colors.white.withOpacity(0.94);
+    final darkPaint = Paint()..color = AppTheme.bg.withOpacity(0.88);
+    final whitePaint = Paint()..color = Colors.white.withOpacity(0.96);
 
     canvas.drawRRect(
       RRect.fromRectAndRadius(
@@ -928,11 +953,11 @@ class _ScooterPainter extends CustomPainter {
         Rect.fromLTWH(center.dx + 4, center.dy - 14, 17, 10),
         const Radius.circular(6),
       ),
-      Paint()..color = AppTheme.bg.withOpacity(0.74),
+      Paint()..color = AppTheme.bg.withOpacity(0.76),
     );
 
     final handlePaint = Paint()
-      ..color = Colors.white.withOpacity(0.9)
+      ..color = Colors.white.withOpacity(0.95)
       ..strokeWidth = 3
       ..strokeCap = StrokeCap.round;
 
@@ -971,12 +996,12 @@ class _DeliveryBottomSheet extends StatelessWidget {
       decoration: BoxDecoration(
         color: const Color(0xF207100F),
         borderRadius: BorderRadius.circular(28),
-        border: Border.all(color: Colors.white.withOpacity(0.09)),
+        border: Border.all(color: Colors.white.withOpacity(0.10)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.34),
-            blurRadius: 20,
-            offset: const Offset(0, -6),
+            color: Colors.black.withOpacity(0.30),
+            blurRadius: 18,
+            offset: const Offset(0, -5),
           ),
         ],
       ),
@@ -987,7 +1012,7 @@ class _DeliveryBottomSheet extends StatelessWidget {
             width: 40,
             height: 4,
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.16),
+              color: Colors.white.withOpacity(0.18),
               borderRadius: BorderRadius.circular(100),
             ),
           ),
@@ -1116,8 +1141,8 @@ class _CircleAction extends StatelessWidget {
       height: 34,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: Colors.white.withOpacity(0.06),
-        border: Border.all(color: Colors.white.withOpacity(0.08)),
+        color: color.withOpacity(0.12),
+        border: Border.all(color: color.withOpacity(0.35)),
       ),
       child: Icon(icon, color: color, size: 16),
     );
@@ -1157,17 +1182,17 @@ class _ConnectedStepIndicator extends StatelessWidget {
                         shape: BoxShape.circle,
                         color: isActive
                             ? AppTheme.green
-                            : Colors.white.withOpacity(0.07),
+                            : Colors.white.withOpacity(0.08),
                         border: Border.all(
                           color: isActive
-                              ? AppTheme.green
-                              : Colors.white.withOpacity(0.12),
+                              ? AppTheme.green.withOpacity(0.90)
+                              : Colors.white.withOpacity(0.16),
                         ),
                         boxShadow: isCurrent
                             ? [
                                 BoxShadow(
-                                  color: AppTheme.green.withOpacity(0.28),
-                                  blurRadius: 14,
+                                  color: AppTheme.green.withOpacity(0.18),
+                                  blurRadius: 12,
                                   spreadRadius: 1,
                                 ),
                               ]
@@ -1177,8 +1202,8 @@ class _ConnectedStepIndicator extends StatelessWidget {
                         steps[index].icon,
                         size: 14,
                         color: isActive
-                            ? AppTheme.bg
-                            : Colors.white.withOpacity(0.36),
+                            ? const Color(0xFF06100E)
+                            : Colors.white.withOpacity(0.52),
                       ),
                     ),
                     const SizedBox(height: 4),
@@ -1205,8 +1230,8 @@ class _ConnectedStepIndicator extends StatelessWidget {
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(99),
                       color: index < activeStep - 1
-                          ? AppTheme.green
-                          : Colors.white.withOpacity(0.10),
+                          ? AppTheme.green.withOpacity(0.85)
+                          : Colors.white.withOpacity(0.12),
                     ),
                   ),
                 ),
