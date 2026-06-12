@@ -16,7 +16,7 @@ class _AiFoodDiscoveryScreenState extends State<AiFoodDiscoveryScreen>
     with SingleTickerProviderStateMixin {
   late final AnimationController _orbController;
 
-  int _selectedFoodIndex = 0;
+  int? _selectedFoodIndex;
   int _selectedCategoryIndex = 0;
   bool _showOrderBar = false;
 
@@ -30,18 +30,26 @@ class _AiFoodDiscoveryScreenState extends State<AiFoodDiscoveryScreen>
     return demoFoods.where((food) => food.category == category).toList();
   }
 
-  FoodItem get _selectedFood {
+  FoodItem get _previewFood {
     final foods = _visibleFoods;
 
-    if (foods.isEmpty) {
-      return demoFoods.first;
+    if (foods.isEmpty) return demoFoods.first;
+
+    if (_selectedFoodIndex != null && _selectedFoodIndex! < foods.length) {
+      return foods[_selectedFoodIndex!];
     }
 
-    if (_selectedFoodIndex >= foods.length) {
-      return foods.first;
-    }
+    return foods.first;
+  }
 
-    return foods[_selectedFoodIndex];
+  FoodItem? get _selectedFood {
+    final foods = _visibleFoods;
+
+    if (_selectedFoodIndex == null) return null;
+    if (foods.isEmpty) return null;
+    if (_selectedFoodIndex! >= foods.length) return null;
+
+    return foods[_selectedFoodIndex!];
   }
 
   @override
@@ -60,10 +68,17 @@ class _AiFoodDiscoveryScreenState extends State<AiFoodDiscoveryScreen>
     super.dispose();
   }
 
+  void _resetSelection() {
+    setState(() {
+      _selectedFoodIndex = null;
+      _showOrderBar = false;
+    });
+  }
+
   void _selectCategory(int index) {
     setState(() {
       _selectedCategoryIndex = index;
-      _selectedFoodIndex = 0;
+      _selectedFoodIndex = null;
       _showOrderBar = false;
     });
   }
@@ -77,28 +92,40 @@ class _AiFoodDiscoveryScreenState extends State<AiFoodDiscoveryScreen>
 
   void _selectTopChoice() {
     setState(() {
+      _selectedFoodIndex = 0;
       _showOrderBar = true;
     });
   }
 
-  void _goToConfirmation() {
-    Navigator.push(
+  Future<void> _goToConfirmation() async {
+    final food = _selectedFood;
+
+    if (food == null) return;
+
+    await Navigator.push(
       context,
       PageRouteBuilder(
         transitionDuration: const Duration(milliseconds: 560),
+        reverseTransitionDuration: const Duration(milliseconds: 420),
         pageBuilder: (_, animation, __) {
           return FadeTransition(
             opacity: animation,
-            child: OrderConfirmationScreen(food: _selectedFood),
+            child: OrderConfirmationScreen(food: food),
           );
         },
       ),
     );
+
+    if (!mounted) return;
+
+    _resetSelection();
   }
 
   @override
   Widget build(BuildContext context) {
     final visibleFoods = _visibleFoods;
+    final previewFood = _previewFood;
+    final selectedFood = _selectedFood;
 
     return Scaffold(
       body: Stack(
@@ -106,16 +133,18 @@ class _AiFoodDiscoveryScreenState extends State<AiFoodDiscoveryScreen>
           const Positioned.fill(child: _DiscoveryBackdrop()),
 
           Positioned.fill(
-            child: Container(
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    Colors.transparent,
-                    Color(0x08000000),
-                    Color(0xB0000000),
-                  ],
+            child: IgnorePointer(
+              child: Container(
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      Colors.transparent,
+                      Color(0x08000000),
+                      Color(0xB0000000),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -236,172 +265,243 @@ class _AiFoodDiscoveryScreenState extends State<AiFoodDiscoveryScreen>
 
                     GestureDetector(
                       onTap: _selectTopChoice,
-                      child: PremiumSurface(
-                        padding: const EdgeInsets.all(16),
-                        borderRadius: BorderRadius.circular(30),
-                        child: LayoutBuilder(
-                          builder: (context, constraints) {
-                            final imageSize = constraints.maxWidth < 360
-                                ? 92.0
-                                : 104.0;
+                      child: AnimatedScale(
+                        scale: _selectedFoodIndex == 0 ? 1.015 : 1,
+                        duration: const Duration(milliseconds: 260),
+                        curve: Curves.easeOutCubic,
+                        child: PremiumSurface(
+                          padding: const EdgeInsets.all(16),
+                          borderRadius: BorderRadius.circular(30),
+                          child: LayoutBuilder(
+                            builder: (context, constraints) {
+                              final imageSize = constraints.maxWidth < 360
+                                  ? 92.0
+                                  : 104.0;
 
-                            return Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Wrap(
-                                        spacing: 10,
-                                        runSpacing: 8,
-                                        crossAxisAlignment:
-                                            WrapCrossAlignment.center,
-                                        children: [
-                                          Container(
-                                            padding: const EdgeInsets.symmetric(
-                                              horizontal: 10,
-                                              vertical: 7,
-                                            ),
-                                            decoration: BoxDecoration(
-                                              color: AppTheme.green.withOpacity(
-                                                0.14,
-                                              ),
-                                              borderRadius:
-                                                  BorderRadius.circular(999),
-                                              border: Border.all(
+                              return Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Wrap(
+                                          spacing: 10,
+                                          runSpacing: 8,
+                                          crossAxisAlignment:
+                                              WrapCrossAlignment.center,
+                                          children: [
+                                            Container(
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                    horizontal: 10,
+                                                    vertical: 7,
+                                                  ),
+                                              decoration: BoxDecoration(
                                                 color: AppTheme.green
-                                                    .withOpacity(0.22),
+                                                    .withOpacity(0.14),
+                                                borderRadius:
+                                                    BorderRadius.circular(999),
+                                                border: Border.all(
+                                                  color: AppTheme.green
+                                                      .withOpacity(0.22),
+                                                ),
                                               ),
-                                            ),
-                                            child: const Text(
-                                              'Top Choice',
-                                              style: TextStyle(
-                                                color: AppTheme.green,
-                                                fontSize: 11.5,
-                                                fontWeight: FontWeight.w800,
-                                              ),
-                                            ),
-                                          ),
-                                          const Row(
-                                            mainAxisSize: MainAxisSize.min,
-                                            children: [
-                                              Icon(
-                                                Icons.bolt_rounded,
-                                                color: AppTheme.orange,
-                                                size: 18,
-                                              ),
-                                              SizedBox(width: 4),
-                                              Text(
-                                                '98% match',
+                                              child: const Text(
+                                                'Top Choice',
                                                 style: TextStyle(
-                                                  color: Colors.white,
-                                                  fontSize: 12,
+                                                  color: AppTheme.green,
+                                                  fontSize: 11.5,
                                                   fontWeight: FontWeight.w800,
                                                 ),
                                               ),
-                                            ],
-                                          ),
-                                        ],
-                                      ),
-
-                                      const SizedBox(height: 12),
-
-                                      Text(
-                                        _selectedFood.name,
-                                        maxLines: 2,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: const TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 20,
-                                          fontWeight: FontWeight.w900,
-                                          letterSpacing: -0.7,
+                                            ),
+                                            const Row(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                Icon(
+                                                  Icons.bolt_rounded,
+                                                  color: AppTheme.orange,
+                                                  size: 18,
+                                                ),
+                                                SizedBox(width: 4),
+                                                Text(
+                                                  '98% match',
+                                                  style: TextStyle(
+                                                    color: Colors.white,
+                                                    fontSize: 12,
+                                                    fontWeight: FontWeight.w800,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ],
                                         ),
-                                      ),
 
-                                      const SizedBox(height: 8),
+                                        const SizedBox(height: 12),
 
-                                      Text(
-                                        '${_selectedFood.restaurant} · ${_selectedFood.distance} away · ${_selectedFood.calories} kcal',
-                                        maxLines: 2,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: const TextStyle(
-                                          color: AppTheme.muted,
-                                          fontSize: 12.5,
-                                          fontWeight: FontWeight.w500,
-                                          height: 1.35,
-                                        ),
-                                      ),
-
-                                      const SizedBox(height: 14),
-
-                                      Row(
-                                        children: [
-                                          _PillStat(
-                                            icon: Icons.star_rounded,
-                                            label: _selectedFood.rating
-                                                .toStringAsFixed(1),
-                                            accent: AppTheme.orange,
+                                        AnimatedSwitcher(
+                                          duration: const Duration(
+                                            milliseconds: 280,
                                           ),
-                                          const SizedBox(width: 7),
-                                          _PillStat(
-                                            icon: Icons.schedule_rounded,
-                                            label: _selectedFood.time,
-                                            accent: AppTheme.cyan,
-                                          ),
-                                          const SizedBox(width: 7),
-                                          _PillStat(
-                                            icon: Icons.local_offer_rounded,
-                                            label: _selectedFood.discount,
-                                            accent: AppTheme.green,
-                                          ),
-                                        ],
-                                      ),
-                                    ],
-                                  ),
-                                ),
-
-                                const SizedBox(width: 10),
-
-                                Stack(
-                                  children: [
-                                    SizedBox(
-                                      width: imageSize,
-                                      height: imageSize,
-                                      child: PremiumNetworkImage(
-                                        imageUrl: _selectedFood.imageUrl,
-                                        heroTag: _selectedFood.imageUrl,
-                                        borderRadius: BorderRadius.circular(26),
-                                      ),
-                                    ),
-                                    Positioned(
-                                      right: 8,
-                                      top: 8,
-                                      child: Container(
-                                        width: 28,
-                                        height: 28,
-                                        decoration: BoxDecoration(
-                                          shape: BoxShape.circle,
-                                          color: const Color(0xEE07100F),
-                                          border: Border.all(
-                                            color: Colors.white.withOpacity(
-                                              0.12,
+                                          transitionBuilder:
+                                              (child, animation) {
+                                                return FadeTransition(
+                                                  opacity: animation,
+                                                  child: SlideTransition(
+                                                    position: Tween<Offset>(
+                                                      begin: const Offset(
+                                                        0.08,
+                                                        0,
+                                                      ),
+                                                      end: Offset.zero,
+                                                    ).animate(animation),
+                                                    child: child,
+                                                  ),
+                                                );
+                                              },
+                                          child: Text(
+                                            previewFood.name,
+                                            key: ValueKey(previewFood.name),
+                                            maxLines: 2,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: const TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 20,
+                                              fontWeight: FontWeight.w900,
+                                              letterSpacing: -0.7,
                                             ),
                                           ),
                                         ),
-                                        child: const Icon(
-                                          Icons.add_rounded,
-                                          color: AppTheme.green,
-                                          size: 18,
+
+                                        const SizedBox(height: 8),
+
+                                        AnimatedSwitcher(
+                                          duration: const Duration(
+                                            milliseconds: 280,
+                                          ),
+                                          child: Text(
+                                            '${previewFood.restaurant} · ${previewFood.distance} away · ${previewFood.calories} kcal',
+                                            key: ValueKey(
+                                              '${previewFood.restaurant}_${previewFood.distance}',
+                                            ),
+                                            maxLines: 2,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: const TextStyle(
+                                              color: AppTheme.muted,
+                                              fontSize: 12.5,
+                                              fontWeight: FontWeight.w500,
+                                              height: 1.35,
+                                            ),
+                                          ),
+                                        ),
+
+                                        const SizedBox(height: 14),
+
+                                        Row(
+                                          children: [
+                                            _PillStat(
+                                              icon: Icons.star_rounded,
+                                              label: previewFood.rating
+                                                  .toStringAsFixed(1),
+                                              accent: AppTheme.orange,
+                                            ),
+                                            const SizedBox(width: 7),
+                                            _PillStat(
+                                              icon: Icons.schedule_rounded,
+                                              label: previewFood.time,
+                                              accent: AppTheme.cyan,
+                                            ),
+                                            const SizedBox(width: 7),
+                                            _PillStat(
+                                              icon: Icons.local_offer_rounded,
+                                              label: previewFood.discount,
+                                              accent: AppTheme.green,
+                                            ),
+                                          ],
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+
+                                  const SizedBox(width: 10),
+
+                                  Stack(
+                                    children: [
+                                      AnimatedSwitcher(
+                                        duration: const Duration(
+                                          milliseconds: 320,
+                                        ),
+                                        transitionBuilder: (child, animation) {
+                                          return FadeTransition(
+                                            opacity: animation,
+                                            child: ScaleTransition(
+                                              scale:
+                                                  Tween<double>(
+                                                    begin: 0.94,
+                                                    end: 1,
+                                                  ).animate(
+                                                    CurvedAnimation(
+                                                      parent: animation,
+                                                      curve:
+                                                          Curves.easeOutCubic,
+                                                    ),
+                                                  ),
+                                              child: child,
+                                            ),
+                                          );
+                                        },
+                                        child: SizedBox(
+                                          key: ValueKey(previewFood.imageUrl),
+                                          width: imageSize,
+                                          height: imageSize,
+                                          child: PremiumNetworkImage(
+                                            imageUrl: previewFood.imageUrl,
+                                            heroTag: previewFood.imageUrl,
+                                            borderRadius: BorderRadius.circular(
+                                              26,
+                                            ),
+                                          ),
                                         ),
                                       ),
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            );
-                          },
+                                      Positioned(
+                                        right: 8,
+                                        top: 8,
+                                        child: AnimatedContainer(
+                                          duration: const Duration(
+                                            milliseconds: 250,
+                                          ),
+                                          width: 28,
+                                          height: 28,
+                                          decoration: BoxDecoration(
+                                            shape: BoxShape.circle,
+                                            color: _selectedFoodIndex == 0
+                                                ? AppTheme.green
+                                                : const Color(0xEE07100F),
+                                            border: Border.all(
+                                              color: Colors.white.withOpacity(
+                                                0.12,
+                                              ),
+                                            ),
+                                          ),
+                                          child: Icon(
+                                            _selectedFoodIndex == 0
+                                                ? Icons.check_rounded
+                                                : Icons.add_rounded,
+                                            color: _selectedFoodIndex == 0
+                                                ? AppTheme.bg
+                                                : AppTheme.green,
+                                            size: 18,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              );
+                            },
+                          ),
                         ),
                       ),
                     ),
@@ -417,14 +517,28 @@ class _AiFoodDiscoveryScreenState extends State<AiFoodDiscoveryScreen>
                           final category = demoCategories[index];
                           final selected = _selectedCategoryIndex == index;
 
-                          return CategoryPill(
-                            label: category.label,
-                            icon: category.icon,
-                            selected: selected,
-                            accentColor: selected
-                                ? AppTheme.green
-                                : AppTheme.cyan,
-                            onTap: () => _selectCategory(index),
+                          return TweenAnimationBuilder<double>(
+                            tween: Tween(begin: 0, end: 1),
+                            duration: Duration(milliseconds: 300 + index * 40),
+                            curve: Curves.easeOutCubic,
+                            builder: (context, value, child) {
+                              return Opacity(
+                                opacity: value,
+                                child: Transform.translate(
+                                  offset: Offset(18 * (1 - value), 0),
+                                  child: child,
+                                ),
+                              );
+                            },
+                            child: CategoryPill(
+                              label: category.label,
+                              icon: category.icon,
+                              selected: selected,
+                              accentColor: selected
+                                  ? AppTheme.green
+                                  : AppTheme.cyan,
+                              onTap: () => _selectCategory(index),
+                            ),
                           );
                         },
                         separatorBuilder: (_, __) => const SizedBox(width: 10),
@@ -450,7 +564,22 @@ class _AiFoodDiscoveryScreenState extends State<AiFoodDiscoveryScreen>
                         itemBuilder: (context, index) {
                           final restaurant = featuredRestaurants[index];
 
-                          return _RestaurantCard(restaurant: restaurant);
+                          return TweenAnimationBuilder<double>(
+                            key: ValueKey(restaurant.name),
+                            tween: Tween(begin: 0, end: 1),
+                            duration: Duration(milliseconds: 420 + index * 70),
+                            curve: Curves.easeOutCubic,
+                            builder: (context, value, child) {
+                              return Opacity(
+                                opacity: value,
+                                child: Transform.translate(
+                                  offset: Offset(28 * (1 - value), 0),
+                                  child: child,
+                                ),
+                              );
+                            },
+                            child: _RestaurantCard(restaurant: restaurant),
+                          );
                         },
                         separatorBuilder: (_, __) => const SizedBox(width: 14),
                         itemCount: featuredRestaurants.length,
@@ -477,21 +606,31 @@ class _AiFoodDiscoveryScreenState extends State<AiFoodDiscoveryScreen>
                         ),
                       )
                     else
-                      ListView.separated(
-                        physics: const NeverScrollableScrollPhysics(),
-                        shrinkWrap: true,
-                        itemBuilder: (context, index) {
-                          final food = visibleFoods[index];
-                          final selected = index == _selectedFoodIndex;
+                      AnimatedSwitcher(
+                        duration: const Duration(milliseconds: 320),
+                        switchInCurve: Curves.easeOutCubic,
+                        switchOutCurve: Curves.easeInCubic,
+                        child: ListView.separated(
+                          key: ValueKey(_selectedCategoryIndex),
+                          physics: const NeverScrollableScrollPhysics(),
+                          shrinkWrap: true,
+                          itemBuilder: (context, index) {
+                            final food = visibleFoods[index];
+                            final selected = _selectedFoodIndex == index;
 
-                          return _FoodCard(
-                            food: food,
-                            selected: selected,
-                            onTap: () => _selectFood(index),
-                          );
-                        },
-                        separatorBuilder: (_, __) => const SizedBox(height: 14),
-                        itemCount: visibleFoods.length,
+                            return _AnimatedFoodCard(
+                              index: index,
+                              child: _FoodCard(
+                                food: food,
+                                selected: selected,
+                                onTap: () => _selectFood(index),
+                              ),
+                            );
+                          },
+                          separatorBuilder: (_, __) =>
+                              const SizedBox(height: 14),
+                          itemCount: visibleFoods.length,
+                        ),
                       ),
                   ],
                 ),
@@ -504,17 +643,45 @@ class _AiFoodDiscoveryScreenState extends State<AiFoodDiscoveryScreen>
             curve: Curves.easeOutCubic,
             left: 16,
             right: 16,
-            bottom: _showOrderBar ? 16 : -120,
+            bottom: _showOrderBar ? 16 : -130,
             child: SafeArea(
               top: false,
-              child: _StickyOrderBar(
-                food: _selectedFood,
-                onTap: _goToConfirmation,
-              ),
+              child: selectedFood == null
+                  ? const SizedBox.shrink()
+                  : _StickyOrderBar(
+                      food: selectedFood,
+                      onTap: _goToConfirmation,
+                    ),
             ),
           ),
         ],
       ),
+    );
+  }
+}
+
+class _AnimatedFoodCard extends StatelessWidget {
+  final int index;
+  final Widget child;
+
+  const _AnimatedFoodCard({required this.index, required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0, end: 1),
+      duration: Duration(milliseconds: 360 + index * 80),
+      curve: Curves.easeOutCubic,
+      builder: (context, value, child) {
+        return Opacity(
+          opacity: value,
+          child: Transform.translate(
+            offset: Offset(0, 26 * (1 - value)),
+            child: Transform.scale(scale: 0.96 + (0.04 * value), child: child),
+          ),
+        );
+      },
+      child: child,
     );
   }
 }
@@ -527,110 +694,122 @@ class _StickyOrderBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(12, 10, 10, 10),
-      decoration: BoxDecoration(
-        color: const Color(0xF207100F),
-        borderRadius: BorderRadius.circular(28),
-        border: Border.all(color: Colors.white.withOpacity(0.10)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.38),
-            blurRadius: 26,
-            offset: const Offset(0, 12),
-          ),
-          BoxShadow(
-            color: food.accent.withOpacity(0.10),
-            blurRadius: 26,
-            offset: const Offset(0, -4),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          ClipRRect(
-            borderRadius: BorderRadius.circular(18),
-            child: Image.network(
-              food.imageUrl,
-              width: 52,
-              height: 52,
-              fit: BoxFit.cover,
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0.92, end: 1),
+      duration: const Duration(milliseconds: 360),
+      curve: Curves.easeOutBack,
+      builder: (context, value, child) {
+        return Transform.scale(
+          scale: value,
+          alignment: Alignment.bottomCenter,
+          child: child,
+        );
+      },
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(12, 10, 10, 10),
+        decoration: BoxDecoration(
+          color: const Color(0xF207100F),
+          borderRadius: BorderRadius.circular(28),
+          border: Border.all(color: Colors.white.withOpacity(0.10)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.38),
+              blurRadius: 26,
+              offset: const Offset(0, 12),
             ),
-          ),
-
-          const SizedBox(width: 12),
-
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  food.name,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 14.5,
-                    fontWeight: FontWeight.w900,
-                    letterSpacing: -0.3,
-                  ),
-                ),
-                const SizedBox(height: 3),
-                Text(
-                  '${food.restaurant} · ${food.time}',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: AppTheme.muted,
-                    fontSize: 11.5,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
+            BoxShadow(
+              color: food.accent.withOpacity(0.12),
+              blurRadius: 28,
+              offset: const Offset(0, -4),
             ),
-          ),
-
-          const SizedBox(width: 10),
-
-          GestureDetector(
-            onTap: onTap,
-            child: Container(
-              height: 48,
-              padding: const EdgeInsets.symmetric(horizontal: 17),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(20),
-                gradient: const LinearGradient(
-                  colors: [AppTheme.green, AppTheme.cyan],
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: AppTheme.green.withOpacity(0.22),
-                    blurRadius: 18,
-                    offset: const Offset(0, 8),
-                  ),
-                ],
+          ],
+        ),
+        child: Row(
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(18),
+              child: Image.network(
+                food.imageUrl,
+                width: 52,
+                height: 52,
+                fit: BoxFit.cover,
               ),
-              child: const Row(
+            ),
+
+            const SizedBox(width: 12),
+
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Order',
-                    style: TextStyle(
-                      color: AppTheme.bg,
-                      fontSize: 14,
+                    food.name,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 14.5,
                       fontWeight: FontWeight.w900,
+                      letterSpacing: -0.3,
                     ),
                   ),
-                  SizedBox(width: 6),
-                  Icon(
-                    Icons.arrow_forward_rounded,
-                    color: AppTheme.bg,
-                    size: 19,
+                  const SizedBox(height: 3),
+                  Text(
+                    '${food.restaurant} · ${food.time}',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: AppTheme.muted,
+                      fontSize: 11.5,
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
                 ],
               ),
             ),
-          ),
-        ],
+
+            const SizedBox(width: 10),
+
+            GestureDetector(
+              onTap: onTap,
+              child: Container(
+                height: 48,
+                padding: const EdgeInsets.symmetric(horizontal: 17),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(20),
+                  gradient: const LinearGradient(
+                    colors: [AppTheme.green, AppTheme.cyan],
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppTheme.green.withOpacity(0.22),
+                      blurRadius: 18,
+                      offset: const Offset(0, 8),
+                    ),
+                  ],
+                ),
+                child: const Row(
+                  children: [
+                    Text(
+                      'Order',
+                      style: TextStyle(
+                        color: AppTheme.bg,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    SizedBox(width: 6),
+                    Icon(
+                      Icons.arrow_forward_rounded,
+                      color: AppTheme.bg,
+                      size: 19,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -807,190 +986,199 @@ class _FoodCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(30),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 300),
-          curve: Curves.easeOutCubic,
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(30),
-            color: selected
-                ? Colors.white.withOpacity(0.095)
-                : Colors.white.withOpacity(0.055),
-            border: Border.all(
+    return AnimatedScale(
+      scale: selected ? 1.015 : 1,
+      duration: const Duration(milliseconds: 230),
+      curve: Curves.easeOutCubic,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(30),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeOutCubic,
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(30),
               color: selected
-                  ? food.accent.withOpacity(0.55)
-                  : Colors.white.withOpacity(0.08),
+                  ? Colors.white.withOpacity(0.105)
+                  : Colors.white.withOpacity(0.055),
+              border: Border.all(
+                color: selected
+                    ? food.accent.withOpacity(0.68)
+                    : Colors.white.withOpacity(0.08),
+              ),
+              boxShadow: selected
+                  ? [
+                      BoxShadow(
+                        color: food.accent.withOpacity(0.18),
+                        blurRadius: 30,
+                        offset: const Offset(0, 16),
+                      ),
+                    ]
+                  : const [],
             ),
-            boxShadow: selected
-                ? [
-                    BoxShadow(
-                      color: food.accent.withOpacity(0.16),
-                      blurRadius: 30,
-                      offset: const Offset(0, 16),
+            child: Row(
+              children: [
+                Stack(
+                  children: [
+                    SizedBox(
+                      width: 96,
+                      height: 96,
+                      child: PremiumNetworkImage(
+                        imageUrl: food.imageUrl,
+                        heroTag: '${food.imageUrl}_list',
+                        borderRadius: BorderRadius.circular(26),
+                      ),
                     ),
-                  ]
-                : const [],
-          ),
-          child: Row(
-            children: [
-              Stack(
-                children: [
-                  SizedBox(
-                    width: 96,
-                    height: 96,
-                    child: PremiumNetworkImage(
-                      imageUrl: food.imageUrl,
-                      heroTag: '${food.imageUrl}_list',
-                      borderRadius: BorderRadius.circular(26),
-                    ),
-                  ),
-                  if (selected)
                     Positioned(
                       top: 8,
                       right: 8,
-                      child: Container(
-                        width: 26,
-                        height: 26,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: AppTheme.green,
-                          border: Border.all(
-                            color: Colors.white.withOpacity(0.25),
-                          ),
-                          boxShadow: [
-                            BoxShadow(
-                              color: AppTheme.green.withOpacity(0.35),
-                              blurRadius: 14,
-                            ),
-                          ],
-                        ),
-                        child: const Icon(
-                          Icons.check_rounded,
-                          color: AppTheme.bg,
-                          size: 17,
-                        ),
-                      ),
-                    ),
-                ],
-              ),
-
-              const SizedBox(width: 14),
-
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            food.name,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 16,
-                              fontWeight: FontWeight.w900,
-                              letterSpacing: -0.3,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 4,
-                          ),
+                      child: AnimatedScale(
+                        scale: selected ? 1 : 0,
+                        duration: const Duration(milliseconds: 220),
+                        curve: Curves.easeOutBack,
+                        child: Container(
+                          width: 26,
+                          height: 26,
                           decoration: BoxDecoration(
-                            color: food.accent.withOpacity(0.14),
-                            borderRadius: BorderRadius.circular(999),
-                          ),
-                          child: Text(
-                            food.discount,
-                            style: TextStyle(
-                              color: food.accent,
-                              fontSize: 10.5,
-                              fontWeight: FontWeight.w800,
+                            shape: BoxShape.circle,
+                            color: AppTheme.green,
+                            border: Border.all(
+                              color: Colors.white.withOpacity(0.25),
                             ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: AppTheme.green.withOpacity(0.35),
+                                blurRadius: 14,
+                              ),
+                            ],
+                          ),
+                          child: const Icon(
+                            Icons.check_rounded,
+                            color: AppTheme.bg,
+                            size: 17,
                           ),
                         ),
-                      ],
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      food.restaurant,
-                      style: const TextStyle(
-                        color: AppTheme.green,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w800,
                       ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      food.description,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: AppTheme.muted,
-                        fontSize: 12.2,
-                        height: 1.35,
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    Row(
-                      children: [
-                        const Icon(
-                          Icons.star_rounded,
-                          color: AppTheme.orange,
-                          size: 16,
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          food.rating.toStringAsFixed(1),
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w800,
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        Text(
-                          food.time,
-                          style: const TextStyle(
-                            color: AppTheme.muted,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        Text(
-                          food.distance,
-                          style: const TextStyle(
-                            color: AppTheme.muted,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        const Spacer(),
-                        Text(
-                          food.price,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 14,
-                            fontWeight: FontWeight.w900,
-                          ),
-                        ),
-                      ],
                     ),
                   ],
                 ),
-              ),
-            ],
+
+                const SizedBox(width: 14),
+
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              food.name,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 16,
+                                fontWeight: FontWeight.w900,
+                                letterSpacing: -0.3,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: food.accent.withOpacity(0.14),
+                              borderRadius: BorderRadius.circular(999),
+                            ),
+                            child: Text(
+                              food.discount,
+                              style: TextStyle(
+                                color: food.accent,
+                                fontSize: 10.5,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        food.restaurant,
+                        style: const TextStyle(
+                          color: AppTheme.green,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        food.description,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: AppTheme.muted,
+                          fontSize: 12.2,
+                          height: 1.35,
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      Row(
+                        children: [
+                          const Icon(
+                            Icons.star_rounded,
+                            color: AppTheme.orange,
+                            size: 16,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            food.rating.toStringAsFixed(1),
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Text(
+                            food.time,
+                            style: const TextStyle(
+                              color: AppTheme.muted,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Text(
+                            food.distance,
+                            style: const TextStyle(
+                              color: AppTheme.muted,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          const Spacer(),
+                          Text(
+                            food.price,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w900,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
